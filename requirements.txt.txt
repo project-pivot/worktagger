@@ -1,25 +1,8 @@
-
-1. Application Description:
-
-The Streamlit application facilitates the classification of activities 
-based on a CSV log of opened windows during work sessions, 
-detected using Tockler. Upon selecting the CSV file and inputting the 
-GPT-4 API keys, the application automatically executes a
-notebook to prepare the data and classify each window activity using
- GPT-4. The resulting dataframe, along with its corresponding 
-classification, is displayed in the application. Users can select 
-rows with incorrect classifications and modify their values.
-
-2. Environment Setup:
-
-Python 3.12.0
-Streamlit, version 1.30.0
-
-3. To use the code:
-
-	- Open the terminal
-	- Run: python -m streamlit run path\of\file
-	- Write the passwords and select the file to upload
-	- Select the rows you want to change using the checkbox column
-	- Click on the button with the value the selected rows should have
-
+streamlit
+pandas
+nbformat
+nbconvert
+sys
+time
+os
+datetime
