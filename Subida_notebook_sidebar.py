@@ -464,8 +464,8 @@ def execute_notebook(notebook_path):
             st.text(output)
 
 # Ruta al notebook que quieres ejecutar
-#notebook_path = 'Notebook_Iris.ipynb'
-notebook_path = 'prueba_subida.ipynb'
+notebook_path = 'Notebook_Iris.ipynb'
+#notebook_path = 'prueba_subida.ipynb'
 
 if "notebook_ejecutado" not in st.session_state:
     st.session_state["notebook_ejecutado"] = False
