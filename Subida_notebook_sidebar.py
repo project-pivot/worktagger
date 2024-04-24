@@ -419,17 +419,18 @@ def execute_notebook(notebook_path):
     
     # Lista para almacenar las salidas de las celdas
     output_list = []
-
+    with open(notebook_path, 'r', encoding='utf-8') as script_file:
+        python_code = script_file.read()
     # Cargar el notebook
-    with open(notebook_path, 'r', encoding='utf-8') as notebook_file:
-        notebook_content = nbformat.read(notebook_file, as_version=4)
+    #with open(notebook_path, 'r', encoding='utf-8') as notebook_file:
+    #    notebook_content = nbformat.read(notebook_file, as_version=4)
 
     # Configurar el exportador para convertir a Python
-    exporter = PythonExporter()
-    exporter.exclude_output = False
+    #exporter = PythonExporter()
+    #exporter.exclude_output = False
 
     # Convertir el notebook a un script de Python
-    python_code, _ = exporter.from_notebook_node(notebook_content)
+    #python_code, _ = exporter.from_notebook_node(notebook_content)
 
     # Función para redirigir la salida a Streamlit y capturarla
     class StreamlitOutput:
@@ -464,8 +465,9 @@ def execute_notebook(notebook_path):
             st.text(output)
 
 # Ruta al notebook que quieres ejecutar
-notebook_path = 'Notebook_Iris.ipynb'
+#notebook_path = 'Notebook_Iris.ipynb'
 #notebook_path = 'prueba_subida.ipynb'
+notebook_path = "clasificacion_iris.py"
 
 if "notebook_ejecutado" not in st.session_state:
     st.session_state["notebook_ejecutado"] = False
