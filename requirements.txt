@@ -1,5 +1,5 @@
-streamlit
+streamlit==1.30.0
 pandas
 nbformat
 nbconvert
-skllm
+scikit-llm==0.4.2
