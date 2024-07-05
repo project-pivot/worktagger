@@ -358,11 +358,12 @@ dicc_core = {
     ]
 }
 
-#if "openai_key" not in st.session_state.items():
-#    st.session_state.openai_key = None
-#if "openai_org" not in st.session_state.items():
-#    st.session_state.openai_org = None
-
+if "openai_key" not in st.session_state:
+    st.session_state.openai_key = None
+if "openai_org" not in st.session_state:
+    st.session_state.openai_org = None
+if "archivo_cargado" not in st.session_state:
+    st.session_state.archivo_cargado = None
 
 #Returns a dictionary where the key is the name of the core activity and the value is the list of corresponding subactivities
 def create_dicc_subactivities(dicc):
@@ -400,16 +401,17 @@ st.set_page_config(layout="wide")
 
 # Subir el archivo desde Streamlit
 with st.expander("Click for upload"):
-    key = st.text_input("Set OpenAI key", type="password")
-    org = st.text_input("Set OpenAI org", type="password")
-    if key and org:
+    st.session_state.openai_key = st.text_input("Set OpenAI key", type="password")
+    st.session_state.openai_org = st.text_input("Set OpenAI org", type="password")
+    #if st.session_state.key and st.session_state.org:
         # Crear un DataFrame con los valores
-        data_openai = {'Key': [key], 'Organization': [org]}
-        df_openai = pd.DataFrame(data_openai)
+        #data_openai = {'Key': [key], 'Organization': [org]}
+        #df_openai = pd.DataFrame(data_openai)
     
         # Guardar el DataFrame en un archivo CSV
-        df_openai.to_csv('openai_config.csv', index=False)
-    archivo_cargado = st.file_uploader("Upload a file", type=["csv"])
+        #df_openai.to_csv('openai_config.csv', index=False)
+    st.session_state.archivo_cargado = st.file_uploader("Upload a file", type=["csv"])
+    #st.write("archivo cargado", archivo_cargado)
 
 def creacion_selectbox(col0, col1, counter,option):
     if counter%2== 0:
@@ -512,8 +514,8 @@ def reset():
 
 def guardar():
     df_original = st.session_state.df_original
-    seleccion_core_act = [clave for clave, valor in st.session_state.items() if isinstance(valor, str) and valor != "" and valor !="all day"]
-    seleccion_subact = [valor for _, valor in st.session_state.items() if isinstance(valor, str) and valor != "" and valor!="all day"]
+    seleccion_core_act = [clave for clave, valor in st.session_state.items() if isinstance(valor, str) and valor != "" and valor !="all day" and clave!="openai_key" and clave!="openai_org"]
+    seleccion_subact = [valor for clave, valor in st.session_state.items() if isinstance(valor, str) and valor != "" and valor!="all day" and clave!="openai_key" and clave!="openai_org"]
     filas_seleccionadas = st.session_state.filas_seleccionadas
     df_original.loc[df['ID'].isin(filas_seleccionadas), 'Subactivity'] = seleccion_subact*len(filas_seleccionadas)
     df_original.loc[df['ID'].isin(filas_seleccionadas), 'Zero_shot_classification'] = seleccion_core_act*len(filas_seleccionadas)
@@ -662,6 +664,7 @@ def execute_notebook(notebook_path):
     try:
         # Ejecutar el script Python
         exec(python_code)
+        st.write("ha ejecutado el fichero")
     except Exception as e:
         st.error(f'Error al ejecutar el script Python: {e}')
     finally:
@@ -689,13 +692,13 @@ if "batch_size" not in st.session_state:
 
 # Llamar a la función para ejecutar el notebook
 mensaje_container = st.empty()
-if archivo_cargado is not None and not st.session_state.notebook_ejecutado:
+if st.session_state.archivo_cargado is not None and not st.session_state.notebook_ejecutado:
 
 
     mensaje_container.write("Notebook running...")
 
-    with open("archivo_temporal.csv", "wb") as f:
-        f.write(archivo_cargado.read())
+    #with open("archivo_temporal.csv", "wb") as f:
+    #    f.write(archivo_cargado.read())
     inicio_espera = time.time()
     execute_notebook(notebook_path)
     mensaje_container.empty()

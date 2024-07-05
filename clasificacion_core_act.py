@@ -12,19 +12,25 @@ from skllm import ZeroShotGPTClassifier
 from skllm.config import SKLLMConfig
 from skllm.datasets import get_multilabel_classification_dataset
 from skllm.preprocessing import GPTSummarizer
+import streamlit as st
+import io
 
 # %%
-configuracion_openai = 'openai_config.csv'
-df_openai = pd.read_csv(configuracion_openai, sep=",")
-clave = df_openai['Key'].iloc[0]
-organizacion = df_openai['Organization'].iloc[0]
+#configuracion_openai = 'openai_config.csv'
+#df_openai = pd.read_csv(configuracion_openai, sep=",")
+#clave = df_openai['Key'].iloc[0]
+#organizacion = df_openai['Organization'].iloc[0]
+clave = st.session_state.openai_key
+organizacion = st.session_state.openai_org
 
 # %%
 SKLLMConfig.set_openai_key(clave)
 SKLLMConfig.set_openai_org(organizacion)
 
+ficheros_subidos = io.BytesIO(st.session_state.archivo_cargado.read())
+ficheros_subidos.seek(0)
 # %%
-df = pd.read_csv("archivo_temporal.csv",sep=";")
+df = pd.read_csv(ficheros_subidos,sep=";")
 df.head(5)
 #df.to_csv('ruta_del_resultado.csv', sep=';')
 
