@@ -1,0 +1,447 @@
+Prompt: I am an assistant professor at a university in The Netherlands and I have been recording my computer behavior. I had a tool record the computer windows that I had active at a certain time. I want you to try to work out what task I was working on during that time.
+
+You will be provided with the following information:
+1. One or more window titles. The titles include the app and the title of the screen. They are ordered in the order that they occurred.
+2. A list of task categories that you may choose from.
+
+3. The description of each task category.
+
+Perform the following tasks:
+1. Identify to which category the provided window titles belong with the highest probability.
+2. Assign the provided text to that category.
+
+Window titles:
+- Microsoft Outlook - Postvak IN - i.m.beerepoot@uu.nl - Outlook
+- Windows Explorer - Postdoc
+- Windows Explorer - Progress
+- Windows Explorer - BPM&A group
+- Microsoft PowerPoint - Venn - PowerPoint
+- Microsoft PowerPoint - Choose a SmartArt Graphic
+- Windows Explorer - Positioning
+
+Candidate labels:
+Faculty plan/capacity group plan: Provide input and collect and document ideas and priorities from the chair
+Management of education and research: Managing and supervising the education and research corresponding to the chair
+Human Resources policy: Execution of the HR policies established by the dean within the chair
+Organizational matters: Following organizational policies regarding HR matters, finances, IT and security
+Programme development: Ensuring the development of academic teaching programmes tailored to the needs of students and society
+Acquisition of contract teaching and research: Acquiring and developing contract teaching and research
+Accountability for contract teaching and research: Assessing and correcting the realisation of contract research and teaching
+Advancing/communicating scientific knowledge and insight: Representing as well as encouraging the advancement of knowledge and insight in their own field of expertise in respect of the scientific community, society and the public and private sectors if possible.
+Working groups and committees: Participating in and/or managing committees or working groups, both internally and externally, as well as carrying out assigned management and administrative duties as the representative of the chair
+Contribution to the research group or lab: Contributing to the group in various ways, e.g. through exchanging ideas, lessons learned, mentoring more junior colleagues, etc.
+Organization of (series of) events: Organizing events or series of external events, including scientific events such as conferences and workshops, but also outreach. 
+Provision of education: Ensuring the provision and quality of course components
+Student supervision: Ensuring the supervision and support of students as well as assessing students in the execution and progress of assignments
+PhD candidates: Appointing, supervising and assessing PhD candidates as a Supervisor in the execution and progress of doctoral research
+Education development: Analysing the level of the students and the needs of society
+Testing: Testing learning outcomes using the assessment methods developed and/or approved by the teaching institute
+Education evaluation: Contributing to the evaluation of the format and the provision of course components as well as submitting proposals regarding potential improvements in the teaching and/or content of these course components
+Education coordination: Coordinating (the development of) a programme and the provision of assigned course components
+Research development: Initiating and developing scientific research programmes based on developments in their own field and in line with societal needs and opportunities for valorisation of the knowledge to be developed
+Assessment of research: Contributing to the assessment of research in the community
+Execution of research: Ensuring the execution and quality of research
+Publication of research: Publishing research results
+Research 
+
+Predicted Label: Management of education and research
+
+Prompt: I am an assistant professor at a university in The Netherlands and I have been recording my computer behavior. I had a tool record the computer windows that I had active at a certain time. I want you to try to work out what task I was working on during that time.
+
+You will be provided with the following information:
+1. One or more window titles. The titles include the app and the title of the screen. They are ordered in the order that they occurred.
+2. A list of task categories that you may choose from.
+
+3. The description of each task category.
+
+Perform the following tasks:
+1. Identify to which category the provided window titles belong with the highest probability.
+2. Assign the provided text to that category.
+
+Window titles:
+- Google Chrome - Start Innovatielab Tekstberichten | Nationaal Archief - Google Chrome
+
+Candidate labels:
+Faculty plan/capacity group plan: Provide input and collect and document ideas and priorities from the chair
+Management of education and research: Managing and supervising the education and research corresponding to the chair
+Human Resources policy: Execution of the HR policies established by the dean within the chair
+Organizational matters: Following organizational policies regarding HR matters, finances, IT and security
+Programme development: Ensuring the development of academic teaching programmes tailored to the needs of students and society
+Acquisition of contract teaching and research: Acquiring and developing contract teaching and research
+Accountability for contract teaching and research: Assessing and correcting the realisation of contract research and teaching
+Advancing/communicating scientific knowledge and insight: Representing as well as encouraging the advancement of knowledge and insight in their own field of expertise in respect of the scientific community, society and the public and private sectors if possible.
+Working groups and committees: Participating in and/or managing committees or working groups, both internally and externally, as well as carrying out assigned management and administrative duties as the representative of the chair
+Contribution to the research group or lab: Contributing to the group in various ways, e.g. through exchanging ideas, lessons learned, mentoring more junior colleagues, etc.
+Organization of (series of) events: Organizing events or series of external events, including scientific events such as conferences and workshops, but also outreach. 
+Provision of education: Ensuring the provision and quality of course components
+Student supervision: Ensuring the supervision and support of students as well as assessing students in the execution and progress of assignments
+PhD candidates: Appointing, supervising and assessing PhD candidates as a Supervisor in the execution and progress of doctoral research
+Education development: Analysing the level of the students and the needs of society
+Testing: Testing learning outcomes using the assessment methods developed and/or approved by the teaching institute
+Education evaluation: Contributing to the evaluation of the format and the provision of course components as well as submitting proposals regarding potential improvements in the teaching and/or content of these course components
+Education coordination: Coordinating (the development of) a programme and the provision of assigned course components
+Research development: Initiating and developing scientific research programmes based on developments in their own field and in line with societal needs and opportunities for valorisation of the knowledge to be developed
+Assessment of research: Contributing to the assessment of research in the community
+Execution of research: Ensuring the execution and quality of research
+Publication of research: Publishing research results
+Research coordination: Coordinating and monitoring the cohesion within a research programme and monitoring the progress of their own research
+Research proposal: Becoming familiar with and defining the subj
+
+Predicted Label: Advancing/communicating scientific knowledge and insight
+
+Prompt: I am an assistant professor at a university in The Netherlands and I have been recording my computer behavior. I had a tool record the computer windows that I had active at a certain time. I want you to try to work out what task I was working on during that time.
+
+You will be provided with the following information:
+1. One or more window titles. The titles include the app and the title of the screen. They are ordered in the order that they occurred.
+2. A list of task categories that you may choose from.
+
+3. The description of each task category.
+
+Perform the following tasks:
+1. Identify to which category the provided window titles belong with the highest probability.
+2. Assign the provided text to that category.
+
+Window titles:
+- Microsoft PowerPoint - Venn - PowerPoint
+- Microsoft PowerPoint - Opening - Venn - PowerPoint
+- Microsoft Outlook - Postvak IN - i.m.beerepoot@uu.nl - Outlook
+
+Candidate labels:
+Faculty plan/capacity group plan: Provide input and collect and document ideas and priorities from the chair
+Management of education and research: Managing and supervising the education and research corresponding to the chair
+Human Resources policy: Execution of the HR policies established by the dean within the chair
+Organizational matters: Following organizational policies regarding HR matters, finances, IT and security
+Programme development: Ensuring the development of academic teaching programmes tailored to the needs of students and society
+Acquisition of contract teaching and research: Acquiring and developing contract teaching and research
+Accountability for contract teaching and research: Assessing and correcting the realisation of contract research and teaching
+Advancing/communicating scientific knowledge and insight: Representing as well as encouraging the advancement of knowledge and insight in their own field of expertise in respect of the scientific community, society and the public and private sectors if possible.
+Working groups and committees: Participating in and/or managing committees or working groups, both internally and externally, as well as carrying out assigned management and administrative duties as the representative of the chair
+Contribution to the research group or lab: Contributing to the group in various ways, e.g. through exchanging ideas, lessons learned, mentoring more junior colleagues, etc.
+Organization of (series of) events: Organizing events or series of external events, including scientific events such as conferences and workshops, but also outreach. 
+Provision of education: Ensuring the provision and quality of course components
+Student supervision: Ensuring the supervision and support of students as well as assessing students in the execution and progress of assignments
+PhD candidates: Appointing, supervising and assessing PhD candidates as a Supervisor in the execution and progress of doctoral research
+Education development: Analysing the level of the students and the needs of society
+Testing: Testing learning outcomes using the assessment methods developed and/or approved by the teaching institute
+Education evaluation: Contributing to the evaluation of the format and the provision of course components as well as submitting proposals regarding potential improvements in the teaching and/or content of these course components
+Education coordination: Coordinating (the development of) a programme and the provision of assigned course components
+Research development: Initiating and developing scientific research programmes based on developments in their own field and in line with societal needs and opportunities for valorisation of the knowledge to be developed
+Assessment of research: Contributing to the assessment of research in the community
+Execution of research: Ensuring the execution and quality of research
+Publication of research: Publishing research results
+Research coordination: Coordinating and monitoring the cohesion within a research programme and monitoring the progress of their own
+
+Predicted Label: Provision of education
+
+Prompt: I am an assistant professor at a university in The Netherlands and I have been recording my computer behavior. I had a tool record the computer windows that I had active at a certain time. I want you to try to work out what task I was working on during that time.
+
+You will be provided with the following information:
+1. One or more window titles. The titles include the app and the title of the screen. They are ordered in the order that they occurred.
+2. A list of task categories that you may choose from.
+
+3. The description of each task category.
+
+Perform the following tasks:
+1. Identify to which category the provided window titles belong with the highest probability.
+2. Assign the provided text to that category.
+
+Window titles:
+- Windows Explorer - Max
+- Windows Explorer - Max
+
+Candidate labels:
+Faculty plan/capacity group plan: Provide input and collect and document ideas and priorities from the chair
+Management of education and research: Managing and supervising the education and research corresponding to the chair
+Human Resources policy: Execution of the HR policies established by the dean within the chair
+Organizational matters: Following organizational policies regarding HR matters, finances, IT and security
+Programme development: Ensuring the development of academic teaching programmes tailored to the needs of students and society
+Acquisition of contract teaching and research: Acquiring and developing contract teaching and research
+Accountability for contract teaching and research: Assessing and correcting the realisation of contract research and teaching
+Advancing/communicating scientific knowledge and insight: Representing as well as encouraging the advancement of knowledge and insight in their own field of expertise in respect of the scientific community, society and the public and private sectors if possible.
+Working groups and committees: Participating in and/or managing committees or working groups, both internally and externally, as well as carrying out assigned management and administrative duties as the representative of the chair
+Contribution to the research group or lab: Contributing to the group in various ways, e.g. through exchanging ideas, lessons learned, mentoring more junior colleagues, etc.
+Organization of (series of) events: Organizing events or series of external events, including scientific events such as conferences and workshops, but also outreach. 
+Provision of education: Ensuring the provision and quality of course components
+Student supervision: Ensuring the supervision and support of students as well as assessing students in the execution and progress of assignments
+PhD candidates: Appointing, supervising and assessing PhD candidates as a Supervisor in the execution and progress of doctoral research
+Education development: Analysing the level of the students and the needs of society
+Testing: Testing learning outcomes using the assessment methods developed and/or approved by the teaching institute
+Education evaluation: Contributing to the evaluation of the format and the provision of course components as well as submitting proposals regarding potential improvements in the teaching and/or content of these course components
+Education coordination: Coordinating (the development of) a programme and the provision of assigned course components
+Research development: Initiating and developing scientific research programmes based on developments in their own field and in line with societal needs and opportunities for valorisation of the knowledge to be developed
+Assessment of research: Contributing to the assessment of research in the community
+Execution of research: Ensuring the execution and quality of research
+Publication of research: Publishing research results
+Research coordination: Coordinating and monitoring the cohesion within a research programme and monitoring the progress of their own research
+Research proposal: Becoming familiar with and defining the subject and theoretical framework
+Research
+
+Predicted Label: Execution of research
+
+Prompt: I am an assistant professor at a university in The Netherlands and I have been recording my computer behavior. I had a tool record the computer windows that I had active at a certain time. I want you to try to work out what task I was working on during that time.
+
+You will be provided with the following information:
+1. One or more window titles. The titles include the app and the title of the screen. They are ordered in the order that they occurred.
+2. A list of task categories that you may choose from.
+
+3. The description of each task category.
+
+Perform the following tasks:
+1. Identify to which category the provided window titles belong with the highest probability.
+2. Assign the provided text to that category.
+
+Window titles:
+- Microsoft Excel - tockler-export_2023-03-06_2023-03-21 - Excel
+- Microsoft Excel - tockler-export_2023-03-23_2023-04-02 - Excel
+
+Candidate labels:
+Faculty plan/capacity group plan: Provide input and collect and document ideas and priorities from the chair
+Management of education and research: Managing and supervising the education and research corresponding to the chair
+Human Resources policy: Execution of the HR policies established by the dean within the chair
+Organizational matters: Following organizational policies regarding HR matters, finances, IT and security
+Programme development: Ensuring the development of academic teaching programmes tailored to the needs of students and society
+Acquisition of contract teaching and research: Acquiring and developing contract teaching and research
+Accountability for contract teaching and research: Assessing and correcting the realisation of contract research and teaching
+Advancing/communicating scientific knowledge and insight: Representing as well as encouraging the advancement of knowledge and insight in their own field of expertise in respect of the scientific community, society and the public and private sectors if possible.
+Working groups and committees: Participating in and/or managing committees or working groups, both internally and externally, as well as carrying out assigned management and administrative duties as the representative of the chair
+Contribution to the research group or lab: Contributing to the group in various ways, e.g. through exchanging ideas, lessons learned, mentoring more junior colleagues, etc.
+Organization of (series of) events: Organizing events or series of external events, including scientific events such as conferences and workshops, but also outreach. 
+Provision of education: Ensuring the provision and quality of course components
+Student supervision: Ensuring the supervision and support of students as well as assessing students in the execution and progress of assignments
+PhD candidates: Appointing, supervising and assessing PhD candidates as a Supervisor in the execution and progress of doctoral research
+Education development: Analysing the level of the students and the needs of society
+Testing: Testing learning outcomes using the assessment methods developed and/or approved by the teaching institute
+Education evaluation: Contributing to the evaluation of the format and the provision of course components as well as submitting proposals regarding potential improvements in the teaching and/or content of these course components
+Education coordination: Coordinating (the development of) a programme and the provision of assigned course components
+Research development: Initiating and developing scientific research programmes based on developments in their own field and in line with societal needs and opportunities for valorisation of the knowledge to be developed
+Assessment of research: Contributing to the assessment of research in the community
+Execution of research: Ensuring the execution and quality of research
+Publication of research: Publishing research results
+Research coordination: Coordinating and monitoring the cohesion within a research programme and monitoring the progress of their own research
+Research proposal: Be
+
+Predicted Label: Faculty plan/capacity group plan
+
+Prompt: I am an assistant professor at a university in The Netherlands and I have been recording my computer behavior. I had a tool record the computer windows that I had active at a certain time. I want you to try to work out what task I was working on during that time.
+
+You will be provided with the following information:
+1. One or more window titles. The titles include the app and the title of the screen. They are ordered in the order that they occurred.
+2. A list of task categories that you may choose from.
+
+3. The description of each task category.
+
+Perform the following tasks:
+1. Identify to which category the provided window titles belong with the highest probability.
+2. Assign the provided text to that category.
+
+Window titles:
+- Microsoft Excel - tockler-export_2023-02-01_2023-02-28-february - Excel
+
+Candidate labels:
+Faculty plan/capacity group plan: Provide input and collect and document ideas and priorities from the chair
+Management of education and research: Managing and supervising the education and research corresponding to the chair
+Human Resources policy: Execution of the HR policies established by the dean within the chair
+Organizational matters: Following organizational policies regarding HR matters, finances, IT and security
+Programme development: Ensuring the development of academic teaching programmes tailored to the needs of students and society
+Acquisition of contract teaching and research: Acquiring and developing contract teaching and research
+Accountability for contract teaching and research: Assessing and correcting the realisation of contract research and teaching
+Advancing/communicating scientific knowledge and insight: Representing as well as encouraging the advancement of knowledge and insight in their own field of expertise in respect of the scientific community, society and the public and private sectors if possible.
+Working groups and committees: Participating in and/or managing committees or working groups, both internally and externally, as well as carrying out assigned management and administrative duties as the representative of the chair
+Contribution to the research group or lab: Contributing to the group in various ways, e.g. through exchanging ideas, lessons learned, mentoring more junior colleagues, etc.
+Organization of (series of) events: Organizing events or series of external events, including scientific events such as conferences and workshops, but also outreach. 
+Provision of education: Ensuring the provision and quality of course components
+Student supervision: Ensuring the supervision and support of students as well as assessing students in the execution and progress of assignments
+PhD candidates: Appointing, supervising and assessing PhD candidates as a Supervisor in the execution and progress of doctoral research
+Education development: Analysing the level of the students and the needs of society
+Testing: Testing learning outcomes using the assessment methods developed and/or approved by the teaching institute
+Education evaluation: Contributing to the evaluation of the format and the provision of course components as well as submitting proposals regarding potential improvements in the teaching and/or content of these course components
+Education coordination: Coordinating (the development of) a programme and the provision of assigned course components
+Research development: Initiating and developing scientific research programmes based on developments in their own field and in line with societal needs and opportunities for valorisation of the knowledge to be developed
+Assessment of research: Contributing to the assessment of research in the community
+Execution of research: Ensuring the execution and quality of research
+Publication of research: Publishing research results
+Research coordination: Coordinating and monitoring the cohesion within a research programme and monitoring the progress of their own research
+Research proposal: Becoming familiar with and defining the subject and theore
+
+Predicted Label: Execution of research
+
+Prompt: I am an assistant professor at a university in The Netherlands and I have been recording my computer behavior. I had a tool record the computer windows that I had active at a certain time. I want you to try to work out what task I was working on during that time.
+
+You will be provided with the following information:
+1. One or more window titles. The titles include the app and the title of the screen. They are ordered in the order that they occurred.
+2. A list of task categories that you may choose from.
+
+3. The description of each task category.
+
+Perform the following tasks:
+1. Identify to which category the provided window titles belong with the highest probability.
+2. Assign the provided text to that category.
+
+Window titles:
+- Microsoft Excel - Analysis Lens
+- Microsoft Excel - tockler-export_2023-03-06_2023-03-21 - Excel
+
+Candidate labels:
+Faculty plan/capacity group plan: Provide input and collect and document ideas and priorities from the chair
+Management of education and research: Managing and supervising the education and research corresponding to the chair
+Human Resources policy: Execution of the HR policies established by the dean within the chair
+Organizational matters: Following organizational policies regarding HR matters, finances, IT and security
+Programme development: Ensuring the development of academic teaching programmes tailored to the needs of students and society
+Acquisition of contract teaching and research: Acquiring and developing contract teaching and research
+Accountability for contract teaching and research: Assessing and correcting the realisation of contract research and teaching
+Advancing/communicating scientific knowledge and insight: Representing as well as encouraging the advancement of knowledge and insight in their own field of expertise in respect of the scientific community, society and the public and private sectors if possible.
+Working groups and committees: Participating in and/or managing committees or working groups, both internally and externally, as well as carrying out assigned management and administrative duties as the representative of the chair
+Contribution to the research group or lab: Contributing to the group in various ways, e.g. through exchanging ideas, lessons learned, mentoring more junior colleagues, etc.
+Organization of (series of) events: Organizing events or series of external events, including scientific events such as conferences and workshops, but also outreach. 
+Provision of education: Ensuring the provision and quality of course components
+Student supervision: Ensuring the supervision and support of students as well as assessing students in the execution and progress of assignments
+PhD candidates: Appointing, supervising and assessing PhD candidates as a Supervisor in the execution and progress of doctoral research
+Education development: Analysing the level of the students and the needs of society
+Testing: Testing learning outcomes using the assessment methods developed and/or approved by the teaching institute
+Education evaluation: Contributing to the evaluation of the format and the provision of course components as well as submitting proposals regarding potential improvements in the teaching and/or content of these course components
+Education coordination: Coordinating (the development of) a programme and the provision of assigned course components
+Research development: Initiating and developing scientific research programmes based on developments in their own field and in line with societal needs and opportunities for valorisation of the knowledge to be developed
+Assessment of research: Contributing to the assessment of research in the community
+Execution of research: Ensuring the execution and quality of research
+Publication of research: Publishing research results
+Research coordination: Coordinating and monitoring the cohesion within a research programme and monitoring the progress of their own research
+Research proposal: Becoming familiar with and defini
+
+Predicted Label: Execution of research
+
+Prompt: I am an assistant professor at a university in The Netherlands and I have been recording my computer behavior. I had a tool record the computer windows that I had active at a certain time. I want you to try to work out what task I was working on during that time.
+
+You will be provided with the following information:
+1. One or more window titles. The titles include the app and the title of the screen. They are ordered in the order that they occurred.
+2. A list of task categories that you may choose from.
+
+3. The description of each task category.
+
+Perform the following tasks:
+1. Identify to which category the provided window titles belong with the highest probability.
+2. Assign the provided text to that category.
+
+Window titles:
+- Microsoft Excel - Example categorisation - Excel
+- Microsoft Outlook - Microsoft Outlook
+- Microsoft Teams - BPM&A lunch meeting | Microsoft Teams
+- Microsoft Outlook - 2 Reminder(s)
+- Microsoft Teams - BPM&A lunch meeting | Microsoft Teams
+- Microsoft Teams - BPM&A lunch meeting | Microsoft Teams
+- Microsoft Teams - Microsoft Teams
+- Microsoft Teams - BPM&A lunch meeting | Microsoft Teams
+- Microsoft Teams - BPM&A lunch meeting | Microsoft Teams
+
+Candidate labels:
+Faculty plan/capacity group plan: Provide input and collect and document ideas and priorities from the chair
+Management of education and research: Managing and supervising the education and research corresponding to the chair
+Human Resources policy: Execution of the HR policies established by the dean within the chair
+Organizational matters: Following organizational policies regarding HR matters, finances, IT and security
+Programme development: Ensuring the development of academic teaching programmes tailored to the needs of students and society
+Acquisition of contract teaching and research: Acquiring and developing contract teaching and research
+Accountability for contract teaching and research: Assessing and correcting the realisation of contract research and teaching
+Advancing/communicating scientific knowledge and insight: Representing as well as encouraging the advancement of knowledge and insight in their own field of expertise in respect of the scientific community, society and the public and private sectors if possible.
+Working groups and committees: Participating in and/or managing committees or working groups, both internally and externally, as well as carrying out assigned management and administrative duties as the representative of the chair
+Contribution to the research group or lab: Contributing to the group in various ways, e.g. through exchanging ideas, lessons learned, mentoring more junior colleagues, etc.
+Organization of (series of) events: Organizing events or series of external events, including scientific events such as conferences and workshops, but also outreach. 
+Provision of education: Ensuring the provision and quality of course components
+Student supervision: Ensuring the supervision and support of students as well as assessing students in the execution and progress of assignments
+PhD candidates: Appointing, supervising and assessing PhD candidates as a Supervisor in the execution and progress of doctoral research
+Education development: Analysing the level of the students and the needs of society
+Testing: Testing learning outcomes using the assessment methods developed and/or approved by the teaching institute
+Education evaluation: Contributing to the evaluation of the format and the provision of course components as well as submitting proposals regarding potential improvements in the teaching and/or content of these course components
+Education coordination: Coordinating (the development of) a programme and the provision of assigned course components
+Research development: Initiating and developing scientific research programmes based on developments in their own field and in line with societal needs and opportunities for valorisation of the knowledge to be developed
+Assessment of research: Contributing to the ass
+
+Predicted Label: Working groups and committees
+
+Prompt: I am an assistant professor at a university in The Netherlands and I have been recording my computer behavior. I had a tool record the computer windows that I had active at a certain time. I want you to try to work out what task I was working on during that time.
+
+You will be provided with the following information:
+1. One or more window titles. The titles include the app and the title of the screen. They are ordered in the order that they occurred.
+2. A list of task categories that you may choose from.
+
+3. The description of each task category.
+
+Perform the following tasks:
+1. Identify to which category the provided window titles belong with the highest probability.
+2. Assign the provided text to that category.
+
+Window titles:
+- Microsoft Teams - Calendar | Microsoft Teams
+- Microsoft Outlook - Agenda - i.m.beerepoot@uu.nl - Outlook
+- Microsoft Outlook - Postvak IN - i.m.beerepoot@uu.nl - Outlook
+- Windows Explorer - 2022 Time tracking
+
+Candidate labels:
+Faculty plan/capacity group plan: Provide input and collect and document ideas and priorities from the chair
+Management of education and research: Managing and supervising the education and research corresponding to the chair
+Human Resources policy: Execution of the HR policies established by the dean within the chair
+Organizational matters: Following organizational policies regarding HR matters, finances, IT and security
+Programme development: Ensuring the development of academic teaching programmes tailored to the needs of students and society
+Acquisition of contract teaching and research: Acquiring and developing contract teaching and research
+Accountability for contract teaching and research: Assessing and correcting the realisation of contract research and teaching
+Advancing/communicating scientific knowledge and insight: Representing as well as encouraging the advancement of knowledge and insight in their own field of expertise in respect of the scientific community, society and the public and private sectors if possible.
+Working groups and committees: Participating in and/or managing committees or working groups, both internally and externally, as well as carrying out assigned management and administrative duties as the representative of the chair
+Contribution to the research group or lab: Contributing to the group in various ways, e.g. through exchanging ideas, lessons learned, mentoring more junior colleagues, etc.
+Organization of (series of) events: Organizing events or series of external events, including scientific events such as conferences and workshops, but also outreach. 
+Provision of education: Ensuring the provision and quality of course components
+Student supervision: Ensuring the supervision and support of students as well as assessing students in the execution and progress of assignments
+PhD candidates: Appointing, supervising and assessing PhD candidates as a Supervisor in the execution and progress of doctoral research
+Education development: Analysing the level of the students and the needs of society
+Testing: Testing learning outcomes using the assessment methods developed and/or approved by the teaching institute
+Education evaluation: Contributing to the evaluation of the format and the provision of course components as well as submitting proposals regarding potential improvements in the teaching and/or content of these course components
+Education coordination: Coordinating (the development of) a programme and the provision of assigned course components
+Research development: Initiating and developing scientific research programmes based on developments in their own field and in line with societal needs and opportunities for valorisation of the knowledge to be developed
+Assessment of research: Contributing to the assessment of research in the community
+Execution of research: Ensuring the execution and quality of research
+Publication of research: Publishing research results
+Research coordination: Coordinating and monitoring the cohesion within a researc
+
+Predicted Label: Management of education and research
+
+Prompt: I am an assistant professor at a university in The Netherlands and I have been recording my computer behavior. I had a tool record the computer windows that I had active at a certain time. I want you to try to work out what task I was working on during that time.
+
+You will be provided with the following information:
+1. One or more window titles. The titles include the app and the title of the screen. They are ordered in the order that they occurred.
+2. A list of task categories that you may choose from.
+
+3. The description of each task category.
+
+Perform the following tasks:
+1. Identify to which category the provided window titles belong with the highest probability.
+2. Assign the provided text to that category.
+
+Window titles:
+- Microsoft Outlook - Re: Master thesis Sam Kooijman - MBI Student - Message (HTML)
+- Microsoft Outlook - Postvak IN - i.m.beerepoot@uu.nl - Outlook
+- Microsoft Outlook - Agenda - i.m.beerepoot@uu.nl - Outlook
+
+Candidate labels:
+Faculty plan/capacity group plan: Provide input and collect and document ideas and priorities from the chair
+Management of education and research: Managing and supervising the education and research corresponding to the chair
+Human Resources policy: Execution of the HR policies established by the dean within the chair
+Organizational matters: Following organizational policies regarding HR matters, finances, IT and security
+Programme development: Ensuring the development of academic teaching programmes tailored to the needs of students and society
+Acquisition of contract teaching and research: Acquiring and developing contract teaching and research
+Accountability for contract teaching and research: Assessing and correcting the realisation of contract research and teaching
+Advancing/communicating scientific knowledge and insight: Representing as well as encouraging the advancement of knowledge and insight in their own field of expertise in respect of the scientific community, society and the public and private sectors if possible.
+Working groups and committees: Participating in and/or managing committees or working groups, both internally and externally, as well as carrying out assigned management and administrative duties as the representative of the chair
+Contribution to the research group or lab: Contributing to the group in various ways, e.g. through exchanging ideas, lessons learned, mentoring more junior colleagues, etc.
+Organization of (series of) events: Organizing events or series of external events, including scientific events such as conferences and workshops, but also outreach. 
+Provision of education: Ensuring the provision and quality of course components
+Student supervision: Ensuring the supervision and support of students as well as assessing students in the execution and progress of assignments
+PhD candidates: Appointing, supervising and assessing PhD candidates as a Supervisor in the execution and progress of doctoral research
+Education development: Analysing the level of the students and the needs of society
+Testing: Testing learning outcomes using the assessment methods developed and/or approved by the teaching institute
+Education evaluation: Contributing to the evaluation of the format and the provision of course components as well as submitting proposals regarding potential improvements in the teaching and/or content of these course components
+Education coordination: Coordinating (the development of) a programme and the provision of assigned course components
+Research development: Initiating and developing scientific research programmes based on developments in their own field and in line with societal needs and opportunities for valorisation of the knowledge to be developed
+Assessment of research: Contributing to the assessment of research in the community
+Execution of research: Ensuring the execution and quality of research
+Publication of research: Publishing research results
+Research coordination: Coordinating and monitoring the cohesion within a research p
+
+Predicted Label: Student supervision
+

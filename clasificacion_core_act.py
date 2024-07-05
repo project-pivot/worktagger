@@ -150,81 +150,39 @@ filtered_df = result_df[result_df['Type'] == 'Computer work'].copy()[:150]
 X = filtered_df["Merged_titles"].tolist()
 
 # Zero-shot classification
-candidate_labels = [
-    "Actively contributing to social debates",
-    "Assessing the students? assignments and submitting the assessment to the Board of Examiners",
-    "Adapting a publication",
-    "Assessing exams and giving marks",
-    "Communicating about events",
-    "Communicating to students about the teaching material and assessment",
-    "Conducting research",
-    "Discussing possible assignments with students",
-    "Discussing the structure, provision and progress of the assignment with students",
-    "Drafting a research plan",
-    "Drafting conference papers",
-    "Drafting exam papers",
-    "Drafting publications for recognised academic journals and trade journals",
-    "Encouraging and giving lectures",
-    "Exploring the societal need for research",
-    "Following specific courses",
-    "Initiating a new research project in coordination with relevant national and international colleagues (and external parties) based on relevant developments (scientific content, needs of society, opportunities for valorisation)",
-    "Organizing national and international travelling",
-    "Organizing practical aspects for the group",
-    "Organizing practical aspects of events",
-    "Participating in group meetings",
-    "Periodically discussing research results with fellow researchers and supervisor or co-supervisor",
-    "Planning teaching activities",
-    "Preparing and providing teaching sessions for students, providing prospective students with information",
-    "Proposing events",
-    "Requesting and assessing leave",
-    "Reviewing",
-    "Supervising and discussing the progress of the partial or completed research with PhD candidates"
-]
-candidate_labels_2 = [
-    "?g?r ?t?rk",
-    "Active Window Tracking",
-    "AI Lab for Public Services",
-    "Benjamin Kleppe",
-    "BISE special issue on mismatches event data and reality",
-    "BPM 2023",
-    "BPM conference 2023",
-    "BPM course",
-    "BPM paper combination SWORD and motivation model",
-    "BPM paper combination SWORD and motivational model",
-    "BPM&A group",
-    "BPMA Group",
-    "Brainstorm 15-3-2023",
-    "Brainstorm seminar on PM human-in-the-loop",
-    "Dagmar van den Berg",
-    "Dagstuhl seminar on Human in the Process Mines",
-    "ECIS 2023",
-    "ECIS 2023 workarounds workshop",
-    "ECIS paper on RPA priorities  ",
-    "EWUU seed fund predictive process monitoring",
-    "Future of Work Lunch meeting ",
-    "Future of Work Think paper",
-    "Girls Club WIN",
-    "Guest lecture NWI bachelor",
-    "Human resource perspective in Process Mining",
-    "ICIS 2023 routines track",
-    "ICS department",
-    "Ivonne Mangula",
-    "Karst van de Vendel",
-    "Map metaphor",
-    "March holiday",
-    "Max Gompel",
-    "MethodsX paper Identifying Grand Challenges",
-    "OTP Workload Monitor",
-    "RCIS 2023",
-    "RCIS paper on recording techniques",
-    "RCIS paper recording techniques",
-    "Sam Kooijman",
-    "SOFTX-D-23-00057",
-    "Stijn Beekhuis",
-    "Tim van Holst",
-    "Tutorial on task support for PM",
-    "Ying Liu"
-]
+
+
+core_activities = {
+    "Faculty plan/capacity group plan": "Provide input and collect and document ideas and priorities from the chair",
+    "Management of education and research": "Managing and supervising the education and research corresponding to the chair",
+    "Human Resources policy": "Execution of the HR policies established by the dean within the chair",
+    "Organizational matters": "Following organizational policies regarding HR matters, finances, IT and security",
+    "Programme development" : "Ensuring the development of academic teaching programmes tailored to the needs of students and society",
+    "Acquisition of contract teaching and research" : "Acquiring and developing contract teaching and research",
+    "Accountability for contract teaching and research" :  "Assessing and correcting the realisation of contract research and teaching",
+    "Advancing/communicating scientific knowledge and insight": "Representing as well as encouraging the advancement of knowledge and insight in their own field of expertise in respect of the scientific community, society and the public and private sectors if possible.",
+    "Working groups and committees": "Participating in and/or managing committees or working groups, both internally and externally, as well as carrying out assigned management and administrative duties as the representative of the chair",
+    "Contribution to the research group or lab": "Contributing to the group in various ways, e.g. through exchanging ideas, lessons learned, mentoring more junior colleagues, etc.",
+    "Organization of (series of) events": "Organizing events or series of external events, including scientific events such as conferences and workshops, but also outreach. ",
+    "Provision of education": "Ensuring the provision and quality of course components",
+    "Student supervision" : "Ensuring the supervision and support of students as well as assessing students in the execution and progress of assignments",
+    "PhD candidates" : "Appointing, supervising and assessing PhD candidates as a Supervisor in the execution and progress of doctoral research",
+    "Education development" : "Analysing the level of the students and the needs of society",
+    "Testing" :  "Testing learning outcomes using the assessment methods developed and/or approved by the teaching institute",
+    "Education evaluation" : "Contributing to the evaluation of the format and the provision of course components as well as submitting proposals regarding potential improvements in the teaching and/or content of these course components",
+    "Education coordination" : "Coordinating (the development of) a programme and the provision of assigned course components",
+    "Research development" : "Initiating and developing scientific research programmes based on developments in their own field and in line with societal needs and opportunities for valorisation of the knowledge to be developed",
+    "Assessment of research" : "Contributing to the assessment of research in the community",
+    "Execution of research" : "Ensuring the execution and quality of research",
+    "Publication of research" : "Publishing research results",
+    "Research coordination" : "Coordinating and monitoring the cohesion within a research programme and monitoring the progress of their own research",
+    "Research proposal" : "Becoming familiar with and defining the subject and theoretical framework",
+    "Research plan" : "Formulating a research question and working hypotheses as well as determining research methods and target groups",
+    "Performing research" : "Collecting, analysing and interpreting research data, both empirically and theoretically",
+    "Doctoral thesis" : "Writing a doctoral thesis in consultation with the supervisor"
+
+}
+
 
 
 
@@ -237,17 +195,26 @@ prompt_template = (
     "You will be provided with the following information:\n"
     "1. One or more window titles. The titles include the app and the title of the screen. They are ordered in the order that they occurred.\n"
     "2. A list of task categories that you may choose from.\n\n"
+    "3. The description of each task category.\n\n"
     "Perform the following tasks:\n"
     "1. Identify to which category the provided window titles belong with the highest probability.\n"
     "2. Assign the provided text to that category.\n\n"
     "Window titles:\n{}\n\nCandidate labels:\n{}"
+    "Output ONLY the name of the category NOT the description"
 )
+
+candidate_labels_2 = [f"{key}: {value}" for key, value in core_activities.items()]
+candidate_labels = [key for key,value in core_activities.items()]
 
 # Format the prompt for each instance in the dataset
 formatted_prompts = [
-    prompt_template.format("\n".join(f"- {title}" for title in text.split(";")), "\n".join(candidate_labels))
+    prompt_template.format("\n".join(f"- {title}" for title in text.split(";")), "\n".join(candidate_labels_2))
     for text in X
 ]
+#print("Formatted_prompt")
+#for el in formatted_prompts:
+#    print(el)
+#    print("============================")
 
 
 # %%
@@ -256,6 +223,11 @@ max_tokens = 4000
 
 # Truncate each text in the formatted_prompts list to the specified number of tokens
 truncated_prompts = [prompt[:max_tokens] for prompt in formatted_prompts]
+#print("***********************************")
+#print("Esto es el truncated_prompts")
+#for el in truncated_prompts:
+#    print(el)
+#    print("_____________________________________________________________________________________")
 
 # Create and fit the MultiLabelZeroShotGPTClassifier
 clf = ZeroShotGPTClassifier(openai_model="gpt-4-1106-preview")
@@ -293,7 +265,7 @@ with open(output_file_path, 'w', encoding="utf-8") as output_file:
         prompt = truncated_prompts[index]
         predicted_label = labels[index]
 
-        # Write the information to the file
+        # Write the information to the  
         output_file.write(f"Prompt: {prompt}\n\n")
         output_file.write(f"Predicted Label: {predicted_label}\n\n")
 
