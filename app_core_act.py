@@ -12,6 +12,8 @@ from nbconvert.preprocessors import ExecutePreprocessor
 from nbconvert import HTMLExporter
 import datetime as dt
 import clasificacion_core_act
+import io
+from io import BytesIO
 
 
 dicc_core = {
@@ -406,21 +408,10 @@ def create_dicc_color(dicc):
 
 dicc_core_color = create_dicc_color(dicc_core)
 
-# def get_subactivity_options(row):
-#     classification = row['Zero_shot_classification']
-#     return dicc_subact.get(classification, [])
-
-
-def creacion_selectbox(col0, col1, counter,option):
-    if counter%2== 0:
-        with col0:
-            selectbox = st.selectbox(option, key=option, options = [''] + dicc_subact[option], on_change=guardar)
-            ChangeSelectBoxColour(option,'black', dicc_core_color[option])
-    else:
-        with col1:
-            selectbox = st.selectbox(option, key=option, options =[''] + dicc_subact[option], on_change=guardar)
-            ChangeSelectBoxColour(option, 'black', dicc_core_color[option])
-
+def creacion_selectbox(option):
+    
+    selectbox = st.selectbox(option, key=option, options = [''] + dicc_subact[option], on_change=guardar)
+    ChangeSelectBoxColour(option,'black', dicc_core_color[option])
 
     return selectbox
 
@@ -521,10 +512,20 @@ def guardar():
     reset()
     
 
+def to_csv(df):
+    output = io.BytesIO()
+    df.to_csv(output, index=False, date_format='%d/%m/%Y')
+    return output.getvalue().decode('utf-8')
+
 def finalizar_cambios():
-    df = st.session_state.df
-    df.to_excel("DataFrame_Final.xlsx", index=False)
-    st.success("Cambios finalizados. DataFrame guardado en 'DataFrame_Final.xlsx")
+    excel_data = to_csv(df.drop(columns=['Change']))
+    st.download_button(
+        label="Download CSV",
+        data=excel_data,
+        file_name='dataframe.csv',
+        mime='text/csv'
+    )
+
 
 def asignar_color(s):
     col = dicc_core_color[s.Zero_shot_classification]
@@ -593,14 +594,10 @@ def clasificar_manualmente(df):
         contenedores={}
         for clave in dicc_core.keys():
             contenedores[clave] = st.container()
-            cont_cat = 0
             with contenedores[clave]:
                 st.markdown("### {}".format(clave))
-                col0_cont, col1_cont = st.columns(2)
                 for opcion in dicc_core[clave]:
-                    selectbox = creacion_selectbox(col0_cont,col1_cont, cont_cat, opcion['core_activity'])
-                    #boton = creacion_botones(col0_cont,col1_cont, cont_cat, opcion['core_activity'])
-                    cont_cat = cont_cat+1 
+                    selectbox = creacion_selectbox(opcion['core_activity'])
         
         st.markdown(
             """<style>
@@ -631,6 +628,9 @@ def clasificar_manualmente(df):
             st.empty()
 
     st.markdown('</div>', unsafe_allow_html=True)
+    fin_cambios = st.toggle("Have you finish your changes", label_visibility="visible")
+    if fin_cambios:
+        finalizar_cambios()
 
 
 def execute_notebook(notebook_path):
