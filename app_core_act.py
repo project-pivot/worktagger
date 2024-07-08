@@ -138,7 +138,7 @@ dicc_core = {
         },
         {
             "core_activity": "No work-related",
-            "color":"#FFE4C4",
+            "color":"#FFD4C7",
             "activities":[
             ]
         }
@@ -518,7 +518,7 @@ def to_csv(df):
     return output.getvalue().decode('utf-8')
 
 def finalizar_cambios():
-    excel_data = to_csv(df.drop(columns=['Change']), sep=";", index = False, date_format = '%d/%m/%Y %H:%M' )
+    excel_data = to_csv(df.drop(columns=['Change']))
     st.download_button(
         label="Download CSV",
         data=excel_data,
@@ -750,9 +750,12 @@ if not st.session_state.esperando_resultados:
     with col00:
 
         df = st.session_state.df_original
-        df['Begin'] = pd.to_datetime(df['Begin'], format='%d/%m/%Y %H:%M')  # Asegurarse de que la columna 'Begin' sea de tipo datetime
+        df['Begin'] = pd.to_datetime(df['Begin'], format='%d/%m/%Y %H:%M', errors = 'coerce')  # Asegurarse de que la columna 'Begin' sea de tipo datetime
         distinct_dates = list(df['Begin'].dt.strftime('%d/%m/%Y').unique())
         min_date = df['Begin'].dt.date.min()
+
+
+        st.write("min_date",min_date)
         max_date=df['Begin'].dt.date.max()
         
         a_date = st.date_input("Pick a date", min_value=min_date, max_value=max_date, value=min_date)
