@@ -702,7 +702,7 @@ if archivo_cargado is not None and not st.session_state.notebook_ejecutado:
     if openai_key and openai_org:
         filtered_df = clasificacion_core_act.load_uploaded_file(archivo_cargado)
         mensaje_container.write(f"Classifying with GPT {len(filtered_df)} elements (it might take a while)...")
-        filtered_df = clasificacion_core_act.gpt_classification(filtered_df, openai_key, openai_org, mensaje_container)
+        filtered_df = clasificacion_core_act.gpt_classification(filtered_df, openai_key, openai_org)#, mensaje_container)
     else:
         filtered_df = clasificacion_core_act.simple_load_file(archivo_cargado)
         filtered_df['Zero_shot_classification'] = "No work-related"
