@@ -514,11 +514,11 @@ def guardar():
 
 def to_csv(df):
     output = io.BytesIO()
-    df.to_csv(output, index=False, date_format='%d/%m/%Y')
+    df.to_csv(output, sep = ";",  index=False, date_format= '%d/%m/%Y %H:%M')
     return output.getvalue().decode('utf-8')
 
 def finalizar_cambios():
-    excel_data = to_csv(df.drop(columns=['Change']))
+    excel_data = to_csv(df.drop(columns=['Change']), sep=";", index = False, date_format = '%d/%m/%Y %H:%M' )
     st.download_button(
         label="Download CSV",
         data=excel_data,
@@ -705,7 +705,8 @@ if archivo_cargado is not None and not st.session_state.notebook_ejecutado:
         filtered_df = clasificacion_core_act.gpt_classification(filtered_df, openai_key, openai_org)#, mensaje_container)
     else:
         filtered_df = clasificacion_core_act.simple_load_file(archivo_cargado)
-        filtered_df['Zero_shot_classification'] = "No work-related"
+        if "Zero_shot_classification" not in filtered_df.columns:
+            filtered_df['Zero_shot_classification'] = "No work-related"
         mensaje_container.write("File loaded")
 
     st.session_state.esperando_resultados = False

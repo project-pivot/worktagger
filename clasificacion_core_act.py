@@ -20,16 +20,21 @@ def simple_load_file(loaded_file):
     ficheros_subidos.seek(0)
 
     df = pd.read_csv(ficheros_subidos,sep=";")
-    df['Merged_titles'] = df['App'] +" - "+ df["Title"]
-    #Adds a new column that specifies whether the type of recording is work or computer break.
-    df['Type'] = "Computer work"
-    # Set 'Type' to 'NATIVE - NO_TITLE' where 'Title' is 'NATIVE - NO_TITLE'
-    df['Type'] = np.where(df['Title'].str.contains('NO_TITLE'), 'NO_TITLE', df['Type'])
-    df['Begin'] = pd.to_datetime(df['Begin'], errors='coerce')
-    df['End'] = pd.to_datetime(df['End'], errors='coerce')
-    df["Duration"] = df['End'] - df['Begin']
+    if "Zero_shot_classification" in df.columns:
+        return df
+    else:
+        df['Merged_titles'] = df['App'] +" - "+ df["Title"]
+        #Adds a new column that specifies whether the type of recording is work or computer break.
+        df['Type'] = "Computer work"
+        # Set 'Type' to 'NATIVE - NO_TITLE' where 'Title' is 'NATIVE - NO_TITLE'
+        df['Type'] = np.where(df['Title'].str.contains('NO_TITLE'), 'NO_TITLE', df['Type'])
+        df['Begin'] = pd.to_datetime(df['Begin'], errors='coerce')
+        df['End'] = pd.to_datetime(df['End'], errors='coerce')
+        df["Duration"] = df['End'] - df['Begin']
 
-    return df[df['Type'] == 'Computer work'].copy()
+        return df[df['Type'] == 'Computer work'].copy()
+
+
 
 
 def load_uploaded_file(loaded_file):
