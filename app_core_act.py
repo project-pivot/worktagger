@@ -11,6 +11,7 @@ import streamlit.components.v1 as components
 from nbconvert.preprocessors import ExecutePreprocessor
 from nbconvert import HTMLExporter
 import datetime as dt
+import clasificacion_core_act
 
 
 dicc_core = {
@@ -132,7 +133,14 @@ dicc_core = {
                 "Organizing practical aspects of events",
                 "Communicating about events"
             ]
+        },
+        {
+            "core_activity": "No work-related",
+            "color":"#FFE4C4",
+            "activities":[
+            ]
         }
+
     ],
                                                                                                           
     "Education": [
@@ -358,6 +366,13 @@ dicc_core = {
     ]
 }
 
+def add_unspecify(dicc):
+    for key in dicc:
+        for core in dicc[key]:
+            core["activities"].append(f"Unspecified {core['core_activity']}")
+
+add_unspecify(dicc_core)
+
 if "openai_key" not in st.session_state:
     st.session_state.openai_key = None
 if "openai_org" not in st.session_state:
@@ -391,27 +406,10 @@ def create_dicc_color(dicc):
 
 dicc_core_color = create_dicc_color(dicc_core)
 
-def get_subactivity_options(row):
-    classification = row['Zero_shot_classification']
-    return dicc_subact.get(classification, [])
+# def get_subactivity_options(row):
+#     classification = row['Zero_shot_classification']
+#     return dicc_subact.get(classification, [])
 
-st.set_page_config(layout="wide")
-
-
-
-# Subir el archivo desde Streamlit
-with st.expander("Click for upload"):
-    st.session_state.openai_key = st.text_input("Set OpenAI key", type="password")
-    st.session_state.openai_org = st.text_input("Set OpenAI org", type="password")
-    #if st.session_state.key and st.session_state.org:
-        # Crear un DataFrame con los valores
-        #data_openai = {'Key': [key], 'Organization': [org]}
-        #df_openai = pd.DataFrame(data_openai)
-    
-        # Guardar el DataFrame en un archivo CSV
-        #df_openai.to_csv('openai_config.csv', index=False)
-    st.session_state.archivo_cargado = st.file_uploader("Upload a file", type=["csv"])
-    #st.write("archivo cargado", archivo_cargado)
 
 def creacion_selectbox(col0, col1, counter,option):
     if counter%2== 0:
@@ -676,9 +674,14 @@ def execute_notebook(notebook_path):
         for output in output_list:
             st.text(output)
 
-# Ruta al notebook que quieres ejecutar
-#notebook_path = 'prueba_subida.py'
-notebook_path = "clasificacion_core_act.py"
+
+st.set_page_config(layout="wide")
+
+# Subir el archivo desde Streamlit
+with st.expander("Click for upload"):
+    openai_key = st.text_input("Set OpenAI key", type="password")
+    openai_org = st.text_input("Set OpenAI org", type="password")
+    archivo_cargado = st.file_uploader("Upload a file", type=["csv"])
 
 if "notebook_ejecutado" not in st.session_state:
     st.session_state["notebook_ejecutado"] = False
@@ -689,45 +692,23 @@ if "esperando_resultados" not in st.session_state:
 if "batch_size" not in st.session_state:
     st.session_state["batch_size"] = 10
 
-
 # Llamar a la función para ejecutar el notebook
 mensaje_container = st.empty()
-if st.session_state.archivo_cargado is not None and not st.session_state.notebook_ejecutado:
+if archivo_cargado is not None and not st.session_state.notebook_ejecutado:
+
+    mensaje_container.write("Loading...")
 
 
-    mensaje_container.write("Notebook running...")
+    if openai_key and openai_org:
+        filtered_df = clasificacion_core_act.load_uploaded_file(archivo_cargado)
+        mensaje_container.write(f"Classifying with GPT {len(filtered_df)} elements (it might take a while)...")
+        filtered_df = clasificacion_core_act.gpt_classification(filtered_df, openai_key, openai_org, mensaje_container)
+    else:
+        filtered_df = clasificacion_core_act.simple_load_file(archivo_cargado)
+        filtered_df['Zero_shot_classification'] = "No work-related"
+        mensaje_container.write("File loaded")
 
-    #with open("archivo_temporal.csv", "wb") as f:
-    #    f.write(archivo_cargado.read())
-    inicio_espera = time.time()
-    execute_notebook(notebook_path)
-    mensaje_container.empty()
-    # Ruta del archivo de resultados
-    ruta_resultado = "resultados.xlsx"
-    st.session_state.notebook_ejecutado = True
-
-    # Tiempo máximo de espera en segundos
-    tiempo_maximo_espera = 300  # 5 minutos
-
-    # Tiempo inicial
-    inicio_espera = time.time()
-
-    # Bucle de espera dinámica
-    while (time.time() - inicio_espera) < tiempo_maximo_espera:
-        # Verificar si el archivo de resultados existe
-        if os.path.exists(ruta_resultado):
-            # El archivo ha sido encontrado, salir del bucle
-            st.session_state.esperando_resultados = False
-            break
-    
-        # Calcular el tiempo restante de espera
-        tiempo_restante = tiempo_maximo_espera - (time.time() - inicio_espera)
-    
-        # Mostrar mensaje de progreso al usuario
-        st.text(f"Esperando resultados... Tiempo restante: {int(tiempo_restante)} segundos")
-    
-        # Esperar un segundo antes de volver a verificar
-        time.sleep(1)
+    st.session_state.esperando_resultados = False
 
 
 # Verificar si se encontró el archivo de resultados
@@ -735,7 +716,7 @@ if not st.session_state.esperando_resultados:
     # El archivo de resultados ha sido encontrado, mostrar mensaje de éxito
 
     if "df" not in st.session_state:
-        data = pd.read_excel(ruta_resultado)
+        data = filtered_df
         data_expanded = data.assign(Merged_titles=data['Merged_titles'].str.split(';')).explode('Merged_titles')
         data_expanded['ID'] = range(1,len(data_expanded)+1)
         data_expanded = data_expanded.reset_index(drop=True)
@@ -748,6 +729,8 @@ if not st.session_state.esperando_resultados:
         st.session_state.df['Change'] = False
         st.session_state.df = data_expanded[['Change','ID','Merged_titles','Begin','End','Begin Time','Ending Time', 'Zero_shot_classification']]
         ls =  st.session_state.df['Zero_shot_classification'].map(dicc_subact)
+        print(st.session_state.df['Zero_shot_classification'])
+        print(ls)
         ls_subact = []
         for el in ls:
             ls_subact.append(el[0])
