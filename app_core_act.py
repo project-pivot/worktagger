@@ -346,6 +346,7 @@ if archivo_cargado is not None and not st.session_state.notebook_ejecutado:
         filtered_df = clasificacion_core_act.load_uploaded_file(archivo_cargado)
         mensaje_container.write(f"Classifying with GPT {len(filtered_df)} elements (it might take a while)...")
         filtered_df = clasificacion_core_act.gpt_classification(filtered_df, openai_key, openai_org)#, mensaje_container)
+        st.session_state.notebook_ejecutado = True
     else:
         filtered_df = clasificacion_core_act.simple_load_file(archivo_cargado)
         if "Zero_shot_classification" not in filtered_df.columns:
@@ -373,8 +374,6 @@ if not st.session_state.esperando_resultados:
         st.session_state.df['Change'] = False
         st.session_state.df = data_expanded[['Change','ID','Merged_titles','Begin','End','Begin Time','Ending Time', 'Zero_shot_classification']]
         ls =  st.session_state.df['Zero_shot_classification'].map(dicc_subact)
-        print(st.session_state.df['Zero_shot_classification'])
-        print(ls)
         ls_subact = []
         for el in ls:
             ls_subact.append(el[0])
