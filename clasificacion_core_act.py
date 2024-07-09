@@ -8,6 +8,9 @@ from skllm.datasets import get_multilabel_classification_dataset
 from skllm.preprocessing import GPTSummarizer
 import streamlit as st
 import io
+import warnings
+
+warnings.filterwarnings("ignore")
 
 # clave = st.session_state.openai_key
 # organizacion = st.session_state.openai_org

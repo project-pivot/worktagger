@@ -15,6 +15,9 @@ import clasificacion_core_act
 import core_act
 import io
 from io import BytesIO
+import warnings
+
+warnings.filterwarnings("ignore")
 
 
 @st.cache_data
