@@ -31,17 +31,14 @@ def creacion_selectbox(option):
 
     return selectbox
 
-def creacion_botones(col0, col1, counter,option):
-    if counter%2 == 0:
-        with col0:
-            boton = st.button(option, key=option, on_click=guardar)
-            ChangeButtonColour(option, 'black', dicc_core_color[option])
-
-
+def creacion_botones(option):
+    if option in [0,1,2]:
+        boton = st.button("", key=option, on_click=guardar_boton)
+        ChangeButtonColour(option, 'black', "white")
     else:
-        with col1:
-            boton = st.button(option, key=option, on_click=guardar)
-            ChangeButtonColour(option, 'black', dicc_core_color[option])
+        boton = st.button(option['subact'], key='boton_{}'.format(option['subact']), on_click=guardar_boton)
+        ChangeButtonColour(option['subact'], 'black', dicc_core_color[option['core_act']])
+        
 
     return boton
 
@@ -82,6 +79,8 @@ def split_df(input_df,filas):
     
     return df
 
+
+
 def paginate_df(name, dataset, tipo):
     botton_menu = st.columns((4,1,1))
     with botton_menu[2]:
@@ -90,26 +89,29 @@ def paginate_df(name, dataset, tipo):
         if st.session_state.batch_size=="all day":
             st.session_state.batch_size = int(len(dataset))
     with botton_menu[1]:
-        total_pages = (
+        st.session_state.total_pages = (
             int(len(dataset)/ st.session_state.batch_size) if int(len(dataset) / st.session_state.batch_size) >0 else 1
             
         )
-        current_page = st.number_input(
-            "Page", min_value=1, max_value=total_pages, step=1)
+        st.session_state.current_page = st.number_input(
+            "Page", min_value=1, max_value=st.session_state.total_pages, step=1)
         
     with botton_menu[0]:
-        st.markdown(f"Page **{current_page}** of **{total_pages}** ")
+        st.markdown(f"Page **{st.session_state.current_page}** of **{st.session_state.total_pages}** ")
 
     pages = split_df(dataset,st.session_state.batch_size)
 
     if tipo=="Sin estilos":
-        st.session_state.df = pages[current_page-1].style.apply(asignar_color_sin_estilos,axis=1)
+        st.session_state.df = pages[st.session_state.current_page-1].style.apply(asignar_color_sin_estilos,axis=1)
     
     elif tipo=="Estilos":
-        st.session_state.df = pages[current_page-1].style.apply(asignar_color,axis=1)
+        st.session_state.df = pages[st.session_state.current_page-1].style.apply(asignar_color,axis=1)
     
     else: 
-        st.session_state.df = pages[current_page-1].style.apply(resaltar_principio_fin_bloques, axis=1)
+        st.session_state.df = pages[st.session_state.current_page-1].style.apply(resaltar_principio_fin_bloques, axis=1)
+
+        
+
 
 def reset():
     for core_act in dicc_subact.keys():
@@ -117,13 +119,41 @@ def reset():
 
     st.session_state["all_select"] = ""
     
+def guardar_boton():
+    df_original = st.session_state.df_original
+    seleccion_subact = [clave.replace("boton_", "") for clave, valor in st.session_state.items() if valor is True and "boton_" in clave]
 
+    seleccion_core_act =[x['core_act'] for x in st.session_state.last_acts if x!="" and x['subact'] == seleccion_subact[0]] 
+
+    filas_seleccionadas = st.session_state.filas_seleccionadas
+
+
+    if seleccion_core_act[0] == "all_select":
+        split_selection = seleccion_subact[0].split(" - ")
+
+        if len(split_selection) == 2:
+            seleccion_core_act = [split_selection[1]]
+            seleccion_subact = [split_selection[0]]
+        else:
+            seleccion_core_act = []
+            seleccion_subact = []
+
+    if len(seleccion_core_act) > 0 and len(seleccion_subact) > 0:
+        df_original.loc[df['ID'].isin(filas_seleccionadas), 'Subactivity'] = seleccion_subact*len(filas_seleccionadas)
+        df_original.loc[df['ID'].isin(filas_seleccionadas), 'Zero_shot_classification'] = seleccion_core_act*len(filas_seleccionadas)
+   
+    reset()
 
 def guardar():
     df_original = st.session_state.df_original
     seleccion_core_act = [clave for clave, valor in st.session_state.items() if isinstance(valor, str) and valor != "" and valor !="all day" and clave!="openai_key" and clave!="openai_org"]
     seleccion_subact = [valor for clave, valor in st.session_state.items() if isinstance(valor, str) and valor != "" and valor!="all day" and clave!="openai_key" and clave!="openai_org"]
+    dicc_aux = {"core_act": seleccion_core_act[0], "subact":seleccion_subact[0]}
+    if seleccion_subact not in st.session_state.last_acts:
+        st.session_state.last_acts.pop(0)
+        st.session_state.last_acts.append(dicc_aux)
     filas_seleccionadas = st.session_state.filas_seleccionadas
+
 
     if seleccion_core_act[0] == "all_select":
         split_selection = seleccion_subact[0].split(" - ")
@@ -212,6 +242,7 @@ def clasificar_manualmente(df):
         height= int(35.2*(st.session_state.batch_size+1))
     )
     
+    
     # Filtrar las filas que han sido seleccionadas para cambiar la clasificación
     filas_seleccionadas = edited_df[edited_df['Change']]['ID'].tolist()
     st.session_state.filas_seleccionadas = filas_seleccionadas
@@ -221,12 +252,22 @@ def clasificar_manualmente(df):
         st.selectbox("Search among all subactivities", key="all_select", options = [''] + all_sub, on_change=guardar)
 
         contenedores={}
+        contenedores["Last subactivities"] = st.container()
+        with contenedores["Last subactivities"]:
+            st.markdown("###  Last Subactivities")
+            for i in range(3):
+                el = st.session_state.last_acts[i] #This is either ' ' or a dictionary with two keys: core_act and subact
+                if el =="":
+                    boton = creacion_botones(i)
+                else:
+                    boton = creacion_botones(el)
         for clave in dicc_core.keys():
             contenedores[clave] = st.container()
             with contenedores[clave]:
                 st.markdown("### {}".format(clave))
                 for opcion in dicc_core[clave]:
                     selectbox = creacion_selectbox(opcion['core_activity'])
+
         
         st.markdown(
             """<style>           
@@ -246,6 +287,14 @@ def clasificar_manualmente(df):
         if selectbox:
             #st.write("Valor cambiado")
         #if boton:
+            
+            st.success(f'Selected row sort order updated successfully.')
+            
+            edited_df['Change'] = False
+            
+            # Limpiar el contenido anterior
+            st.empty()
+        if boton:
             
             st.success(f'Selected row sort order updated successfully.')
             
@@ -334,6 +383,12 @@ if "esperando_resultados" not in st.session_state:
 
 if "batch_size" not in st.session_state:
     st.session_state["batch_size"] = 10
+if "current_page" not in st.session_state:
+    st.session_state["current_page"] = 1
+if "total_pages" not in st.session_state:
+    st.session_state["total_pages"] = 1
+if "last_acts" not in st.session_state:
+    st.session_state["last_acts"] = ["","",""]
 
 # Llamar a la función para ejecutar el notebook
 mensaje_container = st.empty()
@@ -412,7 +467,8 @@ if not st.session_state.esperando_resultados:
         try:
             st.session_state.df = df[(df['Begin'] >= a_datetime) & (df['Begin'] < next_day)]
             paginate_df('Iris',st.session_state.df, "Estilos")
-            clasificar_manualmente(st.session_state.df)            
+            clasificar_manualmente(st.session_state.df)
+        
 
         except: 
             st.error("There is no data for the selected date 😞. Why don't you try with another one? 😉")
@@ -422,7 +478,7 @@ if not st.session_state.esperando_resultados:
             st.session_state.df = df[(df['Begin'] >= a_datetime) & (df['Begin'] < next_day)]
             paginate_df('Iris',st.session_state.df, "Resalto")
             clasificar_manualmente(st.session_state.df)
-            
+          
 
         except:
             st.error("There is no data for the selected date 😞. Why don't you try with another one? 😉")
@@ -432,6 +488,7 @@ if not st.session_state.esperando_resultados:
             paginate_df('Iris',st.session_state.df, "Sin estilos")
             # Ejecutar la función con el DataFrame de ejemplo
             clasificar_manualmente(st.session_state.df)
+ 
             
         except: 
             st.error("There is no data for the selected date 😞. Why don't you try with another one? 😉")
