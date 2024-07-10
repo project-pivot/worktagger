@@ -347,6 +347,9 @@ if archivo_cargado is not None and not st.session_state.notebook_ejecutado:
     with st.expander("Click here to introduce the API keys"):
         openai_key = st.text_input("Set OpenAI key", type="password")
         openai_org = st.text_input("Set OpenAI org", type="password")
+        #select_class = st.selectbox("Select what data you want to classify", ["All", "Selected date", "Selected rows"])
+        #if select_class == "Selected date":
+
         button_exec = st.button("Click here to classify with the API of OpenAI")
 
     if openai_key and openai_org and button_exec:
