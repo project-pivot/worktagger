@@ -322,8 +322,8 @@ all_sub = [f"{s} - {c}" for c in dicc_subact for s in dicc_subact[c]]
 
 # Subir el archivo desde Streamlit
 with st.expander("Click for upload"):
-    openai_key = st.text_input("Set OpenAI key", type="password")
-    openai_org = st.text_input("Set OpenAI org", type="password")
+    #openai_key = st.text_input("Set OpenAI key", type="password")
+    #openai_org = st.text_input("Set OpenAI org", type="password")
     archivo_cargado = st.file_uploader("Upload a file", type=["csv"], key="source_file", on_change=changed_file)
 
 if "notebook_ejecutado" not in st.session_state:
@@ -340,17 +340,21 @@ mensaje_container = st.empty()
 if archivo_cargado is not None and not st.session_state.notebook_ejecutado:
 
     mensaje_container.write("Loading...")
+    filtered_df = clasificacion_core_act.simple_load_file(archivo_cargado)
+    if "Zero_shot_classification" not in filtered_df.columns:
+        filtered_df['Zero_shot_classification'] = "No work-related"
+    mensaje_container.write("File loaded")
+    with st.expander("Click here to introduce the API keys"):
+        openai_key = st.text_input("Set OpenAI key", type="password")
+        openai_org = st.text_input("Set OpenAI org", type="password")
+        button_exec = st.button("Click here to classify with the API of OpenAI")
 
-
-    if openai_key and openai_org:
+    if openai_key and openai_org and button_exec:
         filtered_df = clasificacion_core_act.load_uploaded_file(archivo_cargado)
         mensaje_container.write(f"Classifying with GPT {len(filtered_df)} elements (it might take a while)...")
         filtered_df = clasificacion_core_act.gpt_classification(filtered_df, openai_key, openai_org)#, mensaje_container)
-    else:
-        filtered_df = clasificacion_core_act.simple_load_file(archivo_cargado)
-        if "Zero_shot_classification" not in filtered_df.columns:
-            filtered_df['Zero_shot_classification'] = "No work-related"
-        mensaje_container.write("File loaded")
+    
+        
 
     st.session_state.esperando_resultados = False
 
