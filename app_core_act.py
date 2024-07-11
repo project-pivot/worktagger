@@ -80,7 +80,6 @@ def split_df(input_df,filas):
     return df
 
 
-
 def paginate_df(name, dataset, tipo):
     botton_menu = st.columns((4,1,1))
     with botton_menu[2]:
@@ -101,6 +100,7 @@ def paginate_df(name, dataset, tipo):
 
     pages = split_df(dataset,st.session_state.batch_size)
 
+
     if tipo=="Sin estilos":
         st.session_state.df = pages[st.session_state.current_page-1].style.apply(asignar_color_sin_estilos,axis=1)
     
@@ -111,7 +111,9 @@ def paginate_df(name, dataset, tipo):
         st.session_state.df = pages[st.session_state.current_page-1].style.apply(resaltar_principio_fin_bloques, axis=1)
 
         
-
+def going_back():
+    st.session_state.df = st.session_state.last_df
+    st.write("st.df y st.last se supone que son iguales")
 
 def reset():
     for core_act in dicc_subact.keys():
@@ -121,6 +123,7 @@ def reset():
     
 def guardar_boton():
     df_original = st.session_state.df_original
+    st.session_state.last_df = st.session_state.df
     seleccion_subact = [clave.replace("boton_", "") for clave, valor in st.session_state.items() if valor is True and "boton_" in clave]
 
     seleccion_core_act =[x['core_act'] for x in st.session_state.last_acts if x!="" and x['subact'] == seleccion_subact[0]] 
@@ -146,6 +149,7 @@ def guardar_boton():
 
 def guardar():
     df_original = st.session_state.df_original
+    st.session_state.last_df = st.session_state.df
     seleccion_core_act = [clave for clave, valor in st.session_state.items() if isinstance(valor, str) and valor != "" and valor !="all day" and clave!="openai_key" and clave!="openai_org"]
     seleccion_subact = [valor for clave, valor in st.session_state.items() if isinstance(valor, str) and valor != "" and valor!="all day" and clave!="openai_key" and clave!="openai_org"]
     dicc_aux = {"core_act": seleccion_core_act[0], "subact":seleccion_subact[0]}
@@ -218,7 +222,12 @@ def asignar_color_sin_estilos(s):
     return ['background-color:#FFFFFF'] * len(s)
 
 def clasificar_manualmente(df):
-    
+    go_back = st.button("Back", on_click = going_back)
+    if go_back:
+        df = st.session_state.last_df
+        st.session_state.original = st.session_state.last_df
+        st.session_state.df = st.session_state.last_df
+        
     column_config = {
         "Change": st.column_config.CheckboxColumn(
             "Change",
@@ -241,6 +250,14 @@ def clasificar_manualmente(df):
         use_container_width = True,
         height= int(35.2*(st.session_state.batch_size+1))
     )
+    botton_menu = st.columns((4,1,1))
+    with botton_menu[2]:
+
+        total_pages = st.session_state.total_pages
+        st.session_state.current_page = st.number_input("page", min_value=1, max_value=total_pages, step=1)
+
+
+        
     
     
     # Filtrar las filas que han sido seleccionadas para cambiar la clasificación
@@ -389,6 +406,12 @@ if "total_pages" not in st.session_state:
     st.session_state["total_pages"] = 1
 if "last_acts" not in st.session_state:
     st.session_state["last_acts"] = ["","",""]
+if "last_df" not in st.session_state:
+    st.session_state["last_df"] = None
+#if "pages" not in st.session_state:
+#    st.session_state.pages = None
+#if "tipo" not in st.session_state:
+#    st.session_state.tipo = None
 
 # Llamar a la función para ejecutar el notebook
 mensaje_container = st.empty()
@@ -445,7 +468,6 @@ if not st.session_state.esperando_resultados:
         tiempo_maximo_entre_actividades = st.slider("Maximum time between activities (minutes)", min_value=0, max_value=30, value=5)
     
     with col00:
-
         df = st.session_state.df_original
         df['Begin'] = pd.to_datetime(df['Begin'], format='%d/%m/%Y %H:%M', errors = 'coerce')  # Asegurarse de que la columna 'Begin' sea de tipo datetime
         distinct_dates = list(df['Begin'].dt.strftime('%d/%m/%Y').unique())
@@ -488,6 +510,8 @@ if not st.session_state.esperando_resultados:
             paginate_df('Iris',st.session_state.df, "Sin estilos")
             # Ejecutar la función con el DataFrame de ejemplo
             clasificar_manualmente(st.session_state.df)
+            
+
  
             
         except: 
