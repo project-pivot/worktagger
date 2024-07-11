@@ -282,6 +282,7 @@ def clasificar_manualmente(df):
 
         contenedores={}
         contenedores["Last subactivities"] = st.container()
+        boton = None
         with contenedores["Last subactivities"]:
             st.markdown("###  Last Subactivities")
             for i in range(3):
@@ -508,7 +509,8 @@ if not st.session_state.esperando_resultados:
             clasificar_manualmente(st.session_state.df)
         
 
-        except: 
+        except Exception as e: 
+            print(e)
             st.error("There is no data for the selected date 😞. Why don't you try with another one? 😉")
 
     elif on2:
@@ -518,7 +520,8 @@ if not st.session_state.esperando_resultados:
             clasificar_manualmente(st.session_state.df)
           
 
-        except:
+        except Exception as e: 
+            print(e)
             st.error("There is no data for the selected date 😞. Why don't you try with another one? 😉")
     else:
         try:
@@ -530,7 +533,8 @@ if not st.session_state.esperando_resultados:
 
  
             
-        except: 
+        except Exception as e: 
+            print(e)
             st.error("There is no data for the selected date 😞. Why don't you try with another one? 😉")
 
 
