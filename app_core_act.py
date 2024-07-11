@@ -269,7 +269,7 @@ def clasificar_manualmente(df):
         st.number_input('Page',min_value = 1, max_value = total_pages, value=st.session_state.input1, key='input_2', on_change=update_from_input2)
 
 
-        
+    finalizar_cambios()    
     
     
     # Filtrar las filas que han sido seleccionadas para cambiar la clasificación
@@ -284,13 +284,19 @@ def clasificar_manualmente(df):
         contenedores["Last subactivities"] = st.container()
         boton = None
         with contenedores["Last subactivities"]:
+            ll = [x for x in st.session_state.last_acts if x != ""]            
+            
+            subacts = []
             st.markdown("###  Last Subactivities")
-            for i in range(3):
-                el = st.session_state.last_acts[i] #This is either ' ' or a dictionary with two keys: core_act and subact
-                if el !="":
-                #     boton = creacion_botones(i)
-                # else:
+            for el in ll:
+            # for i in range(3):
+            #     el = st.session_state.last_acts[i] #This is either ' ' or a dictionary with two keys: core_act and subact
+            #     if el !="":
+            #     #     boton = creacion_botones(i)
+            #     # else:
+                if not el['subact'] in subacts:
                     boton = creacion_botones(el)
+                    subacts.append(el['subact'])
         for clave in dicc_core.keys():
             contenedores[clave] = st.container()
             with contenedores[clave]:
@@ -336,7 +342,6 @@ def clasificar_manualmente(df):
     st.markdown('</div>', unsafe_allow_html=True)
     # fin_cambios = st.toggle("Have you finish your changes", label_visibility="visible")
     # if fin_cambios:
-    finalizar_cambios()
 
 
 def execute_notebook(notebook_path):
