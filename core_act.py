@@ -325,6 +325,8 @@ def load_activities():
                 "activities":[ 
                     "Drafting publications for recognised academic journals and trade journals",
                     "Drafting conference papers and giving lectures at conferences",
+                    "Drafting other publications",
+                    "Checking status of publications",
                     "Giving presentations at external organisations",
                     "Adapting the publication following responses from reviewers and fellow researchers",
                     "Making agreements with external parties, if present, regarding the publication of research results",

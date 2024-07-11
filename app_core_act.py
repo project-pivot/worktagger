@@ -234,7 +234,7 @@ def asignar_color_sin_estilos(s):
     return ['background-color:#FFFFFF'] * len(s)
 
 def clasificar_manualmente(df):
-    go_back = st.button("Back", on_click = going_back)
+    go_back = st.button("Back", disabled=True, on_click = going_back)
     if go_back:
         df = st.session_state.last_df
         st.session_state.original = st.session_state.last_df
@@ -286,9 +286,9 @@ def clasificar_manualmente(df):
             st.markdown("###  Last Subactivities")
             for i in range(3):
                 el = st.session_state.last_acts[i] #This is either ' ' or a dictionary with two keys: core_act and subact
-                if el =="":
-                    boton = creacion_botones(i)
-                else:
+                if el !="":
+                #     boton = creacion_botones(i)
+                # else:
                     boton = creacion_botones(el)
         for clave in dicc_core.keys():
             contenedores[clave] = st.container()
