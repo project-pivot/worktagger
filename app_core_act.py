@@ -79,6 +79,15 @@ def split_df(input_df,filas):
     
     return df
 
+# To update the shared value from input_number1
+def update_from_input1():
+    st.session_state.current_page = st.session_state.input1
+    st.session_state.input2 = st.session_state.current_page
+
+# To update the shared value from input_number2
+def update_from_input2():
+    st.session_state.current_page = st.session_state.input2
+    st.session_state.input1 = st.session_state.current_page
 
 def paginate_df(name, dataset, tipo):
     botton_menu = st.columns((4,1,1))
@@ -92,8 +101,9 @@ def paginate_df(name, dataset, tipo):
             int(len(dataset)/ st.session_state.batch_size) if int(len(dataset) / st.session_state.batch_size) >0 else 1
             
         )
-        st.session_state.current_page = st.number_input(
-            "Page", min_value=1, max_value=st.session_state.total_pages, step=1)
+        #st.session_state.current_page = st.number_input(
+        #    "Page", min_value=1, max_value=st.session_state.total_pages, step=1)
+        st.number_input('Input 1',min_value = 1, max_value = st.session_state.total_pages,  value=st.session_state.input2, key='input1', on_change=update_from_input1)
         
     with botton_menu[0]:
         st.markdown(f"Page **{st.session_state.current_page}** of **{st.session_state.total_pages}** ")
@@ -254,7 +264,7 @@ def clasificar_manualmente(df):
     with botton_menu[2]:
 
         total_pages = st.session_state.total_pages
-        st.session_state.current_page = st.number_input("page", min_value=1, max_value=total_pages, step=1)
+        st.number_input('Input 2',min_value = 1, max_value = total_pages, value=st.session_state.input1, key='input2', on_change=update_from_input2)
 
 
         
@@ -408,6 +418,10 @@ if "last_acts" not in st.session_state:
     st.session_state["last_acts"] = ["","",""]
 if "last_df" not in st.session_state:
     st.session_state["last_df"] = None
+if 'input1' not in st.session_state:
+    st.session_state.input1 = 1
+if 'input2' not in st.session_state:
+    st.session_state.input2 = 1
 #if "pages" not in st.session_state:
 #    st.session_state.pages = None
 #if "tipo" not in st.session_state:
