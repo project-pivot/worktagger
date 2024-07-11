@@ -333,9 +333,9 @@ def clasificar_manualmente(df):
             st.empty()
 
     st.markdown('</div>', unsafe_allow_html=True)
-    fin_cambios = st.toggle("Have you finish your changes", label_visibility="visible")
-    if fin_cambios:
-        finalizar_cambios()
+    # fin_cambios = st.toggle("Have you finish your changes", label_visibility="visible")
+    # if fin_cambios:
+    finalizar_cambios()
 
 
 def execute_notebook(notebook_path):
