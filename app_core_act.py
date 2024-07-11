@@ -406,8 +406,8 @@ all_sub = [f"{s} - {c}" for c in dicc_subact for s in dicc_subact[c]]
 
 # Subir el archivo desde Streamlit
 with st.expander("Click for upload"):
-    openai_key = st.text_input("Set OpenAI key", type="password")
-    openai_org = st.text_input("Set OpenAI org", type="password")
+    #openai_key = st.text_input("Set OpenAI key", type="password")
+    #openai_org = st.text_input("Set OpenAI org", type="password")
     archivo_cargado = st.file_uploader("Upload a file", type=["csv"], key="source_file", on_change=changed_file)
 
 if "notebook_ejecutado" not in st.session_state:
@@ -430,6 +430,10 @@ if 'input1' not in st.session_state:
     st.session_state.input1 = 1
 if 'input2' not in st.session_state:
     st.session_state.input2 = 1
+if "next_day" not in st.session_state:
+    st.session_state["next_day"] = None
+if "a_datetime" not in st.session_state:
+    st.session_state["a_datetime"] = None
 #if "pages" not in st.session_state:
 #    st.session_state.pages = None
 #if "tipo" not in st.session_state:
@@ -437,23 +441,61 @@ if 'input2' not in st.session_state:
 
 # Llamar a la función para ejecutar el notebook
 mensaje_container = st.empty()
-if archivo_cargado is not None and not st.session_state.notebook_ejecutado:
-
+if archivo_cargado is not None:
     mensaje_container.write("Loading...")
+    with st.expander("Click for inserting OpenAI keys"):
+        openai_key = st.text_input("Set OpenAI key", type="password")
+        openai_org = st.text_input("Set OpenAI org", type="password")
+        select_class = st.selectbox("Choose what data you want to classify", ["All", "Selected date", "Selected rows"])
+            
+        start_class = st.button("Click to start classification") 
+    if not st.session_state.notebook_ejecutado:
 
+    
 
-    if openai_key and openai_org:
-        filtered_df = clasificacion_core_act.load_uploaded_file(archivo_cargado)
-        mensaje_container.write(f"Classifying with GPT {len(filtered_df)} elements (it might take a while)...")
-        filtered_df = clasificacion_core_act.gpt_classification(filtered_df, openai_key, openai_org)#, mensaje_container)
-        st.session_state.notebook_ejecutado = True
-    else:
-        filtered_df = clasificacion_core_act.simple_load_file(archivo_cargado)
-        if "Zero_shot_classification" not in filtered_df.columns:
-            filtered_df['Zero_shot_classification'] = "No work-related"
-        mensaje_container.write("File loaded")
+        if openai_key and openai_org and start_class:
+            #st.write("Entra en empezar la clasificación")
+            filtered_df = clasificacion_core_act.load_uploaded_file(archivo_cargado)
+            if select_class=="Selected date":
+                # Filtrar el DataFrame original basado en la condición dada
+                filtered_df = filtered_df[(filtered_df['Begin'] >= st.session_state.a_datetime) & (filtered_df['Begin'] < st.session_state.next_day)]
+                # Mostrar un mensaje sobre el número de elementos que se están clasificando
+                mensaje_container.write(f"Classifying with GPT {len(filtered_df)} elements (it might take a while)...")
+                # Realizar la clasificación
+                filtered_df = clasificacion_core_act.gpt_classification(filtered_df, openai_key, openai_org)
+                #Separar las ventanas en varias filas
+                filtered_df = filtered_df.assign(Merged_titles=filtered_df['Merged_titles'].str.split(';')).explode('Merged_titles')
+                filtered_df['ID'] = range(1,len(filtered_df)+1)
+                filtered_df = filtered_df.reset_index(drop=True)
+                st.session_state.df_original['Zero_shot_classification'] = filtered_df['Zero_shot_classification']
 
-    st.session_state.esperando_resultados = False
+                # Marcar que el notebook se ha ejecutado
+                st.session_state.notebook_ejecutado = True
+
+            
+            elif select_class == "Selected rows":
+                #st.write("filas seleccionadas", st.session_state.filas_seleccionadas)
+                index = [x - 1 for x in st.session_state.filas_seleccionadas]
+                mensaje_container.write(f"Classifying with GPT {len(st.session_state.df_original.iloc[index])} elements (it might take a while)...")
+                df_filas = clasificacion_core_act.gpt_classification(st.session_state.df_original.iloc[index], openai_key, openai_org)#, mensaje_container)
+                st.session_state.df_original.loc[st.session_state.df_original['ID'].isin(st.session_state.filas_seleccionadas), 'Zero_shot_classification']= df_filas['Zero_shot_classification']
+                filtered_df = st.session_state.df_original
+                st.session_state.notebook_ejecutado = True
+            else:    
+                mensaje_container.write(f"Classifying with GPT {len(filtered_df)} elements (it might take a while)...")
+                filtered_df = clasificacion_core_act.gpt_classification(filtered_df, openai_key, openai_org)#, mensaje_container)
+                filtered_df = filtered_df.assign(Merged_titles=filtered_df['Merged_titles'].str.split(';')).explode('Merged_titles')
+                filtered_df['ID'] = range(1,len(filtered_df)+1)
+                filtered_df = filtered_df.reset_index(drop=True)
+                st.session_state.df_original['Zero_shot_classification'] = filtered_df['Zero_shot_classification']
+                st.session_state.notebook_ejecutado = True
+        else:
+            filtered_df = clasificacion_core_act.simple_load_file(archivo_cargado)
+            if "Zero_shot_classification" not in filtered_df.columns:
+                filtered_df['Zero_shot_classification'] = "No work-related"
+            mensaje_container.write("File loaded")
+
+        st.session_state.esperando_resultados = False
 
 
 # Verificar si se encontró el archivo de resultados
@@ -504,8 +546,10 @@ if not st.session_state.esperando_resultados:
         "Your day starts at:", selected_time
         # Obtener la fecha y hora seleccionadas
         a_datetime = dt.datetime.combine(a_date, selected_time)
+        st.session_state.a_datetime = a_datetime
         # Calcular la fecha y hora exactas de 24 horas posteriores
         next_day = a_datetime + dt.timedelta(hours=24)
+        st.session_state.next_day = next_day
 
     if on and not on2:
         try:

@@ -32,8 +32,8 @@ def simple_load_file(loaded_file):
         df['Type'] = "Computer work"
         # Set 'Type' to 'NATIVE - NO_TITLE' where 'Title' is 'NATIVE - NO_TITLE'
         df['Type'] = np.where(df['Title'].str.contains('NO_TITLE'), 'NO_TITLE', df['Type'])
-        df['Begin'] = pd.to_datetime(df['Begin'], errors='coerce')
-        df['End'] = pd.to_datetime(df['End'], errors='coerce')
+        df['Begin'] = pd.to_datetime(df['Begin'],  format='%d/%m/%Y %H:%M',errors='coerce')
+        df['End'] = pd.to_datetime(df['End'],format='%d/%m/%Y %H:%M', errors='coerce')
         df["Duration"] = df['End'] - df['Begin']
         return df[df['Type'] == 'Computer work'].copy()
 
@@ -65,8 +65,8 @@ def load_uploaded_file(loaded_file):
 
     #Add a column for the duration between the start and end time and calculate the total duration of recorded data.
 
-    df['Begin'] = pd.to_datetime(df['Begin'], errors='coerce')
-    df['End'] = pd.to_datetime(df['End'], errors='coerce')
+    df['Begin'] = pd.to_datetime(df['Begin'],format='%d/%m/%Y %H:%M', errors='coerce')
+    df['End'] = pd.to_datetime(df['End'],format='%d/%m/%Y %H:%M', errors='coerce')
     df["Duration"] = df['End'] - df['Begin']
 
     #Merge all titles between computer breaks.
