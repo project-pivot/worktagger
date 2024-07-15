@@ -5,8 +5,6 @@ from nbconvert import PythonExporter
 import sys
 import time
 import os
-import streamlit as st
-import pandas as pd
 import streamlit.components.v1 as components
 from nbconvert.preprocessors import ExecutePreprocessor
 from nbconvert import HTMLExporter
@@ -21,6 +19,31 @@ warnings.filterwarnings("ignore")
 
 
 @st.cache_data
+
+def load_state_vars():
+    if "notebook_ejecutado" not in st.session_state:
+        st.session_state["notebook_ejecutado"] = False
+    if "esperando_resultados" not in st.session_state:
+        st.session_state["esperando_resultados"] = True
+    if "batch_size" not in st.session_state:
+        st.session_state["batch_size"] = 10
+    if "current_page" not in st.session_state:
+        st.session_state["current_page"] = 1
+    if "total_pages" not in st.session_state:
+        st.session_state["total_pages"] = 1
+    if "last_acts" not in st.session_state:
+        st.session_state["last_acts"] = ["","",""]
+    if "last_df" not in st.session_state:
+        st.session_state["last_df"] = None
+    if 'input1' not in st.session_state:
+        st.session_state.input1 = 1
+    if 'input2' not in st.session_state:
+        st.session_state.input2 = 1
+    if "next_day" not in st.session_state:
+        st.session_state["next_day"] = None
+    if "a_datetime" not in st.session_state:
+        st.session_state["a_datetime"] = None 
+          
 def load_activities():
     return core_act.load_activities()
 
@@ -94,17 +117,13 @@ def update_from_input2():
 def paginate_df(name, dataset, tipo):
     botton_menu = st.columns((4,1,1))
     with botton_menu[2]:
-        #batch_size = st.selectbox("Page Size", options=[10,20,50,100], key=f"{name}")
         st.session_state.batch_size = st.selectbox("Page Size", options=[10,20,50,100, "all day"], key=f"{name}")
         if st.session_state.batch_size=="all day":
             st.session_state.batch_size = int(len(dataset))
     with botton_menu[1]:
         st.session_state.total_pages = (
-            int(len(dataset)/ st.session_state.batch_size) if int(len(dataset) / st.session_state.batch_size) >0 else 1
-            
+            int(len(dataset)/ st.session_state.batch_size) if int(len(dataset) / st.session_state.batch_size) >0 else 1  
         )
-        #st.session_state.current_page = st.number_input(
-        #    "Page", min_value=1, max_value=st.session_state.total_pages, step=1)
         st.number_input('Page',min_value = 0, max_value = st.session_state.total_pages,  value=st.session_state.input2, key='input_1', on_change=update_from_input1)
         
     with botton_menu[0]:
@@ -232,6 +251,22 @@ def resaltar_principio_fin_bloques(fila):
 
 def asignar_color_sin_estilos(s):
     return ['background-color:#FFFFFF'] * len(s)
+
+def classifying_selected(df,openai_key, openai_org, selected):
+    mensaje_container.write(f"Classifying with GPT {len(df)} elements (it might take a while)...")
+    if selected == "Selected rows":
+        df_filas = clasificacion_core_act.gpt_classification(df, openai_key, openai_org)#, mensaje_container)
+        st.session_state.df_original.loc[st.session_state.df_original['ID'].isin(st.session_state.filas_seleccionadas), 'Zero_shot_classification']= df_filas['Zero_shot_classification']
+        df = st.session_state.df_original
+    else:
+
+        df = clasificacion_core_act.gpt_classification(df, openai_key, openai_org)#, mensaje_container)
+        df = df.assign(Merged_titles=df['Merged_titles'].str.split(';')).explode('Merged_titles')
+        df['ID'] = range(1,len(df)+1)
+        df = df.reset_index(drop=True)
+        st.session_state.df_original['Zero_shot_classification'] = df['Zero_shot_classification']
+    
+
 
 def clasificar_manualmente(df):
     go_back = st.button("Back", disabled=True, on_click = going_back)
@@ -406,38 +441,12 @@ all_sub = [f"{s} - {c}" for c in dicc_subact for s in dicc_subact[c]]
 
 # Subir el archivo desde Streamlit
 with st.expander("Click for upload"):
-    #openai_key = st.text_input("Set OpenAI key", type="password")
-    #openai_org = st.text_input("Set OpenAI org", type="password")
     archivo_cargado = st.file_uploader("Upload a file", type=["csv"], key="source_file", on_change=changed_file)
 
-if "notebook_ejecutado" not in st.session_state:
-    st.session_state["notebook_ejecutado"] = False
+load_state_vars()
 
-if "esperando_resultados" not in st.session_state:
-    st.session_state["esperando_resultados"] = True
 
-if "batch_size" not in st.session_state:
-    st.session_state["batch_size"] = 10
-if "current_page" not in st.session_state:
-    st.session_state["current_page"] = 1
-if "total_pages" not in st.session_state:
-    st.session_state["total_pages"] = 1
-if "last_acts" not in st.session_state:
-    st.session_state["last_acts"] = ["","",""]
-if "last_df" not in st.session_state:
-    st.session_state["last_df"] = None
-if 'input1' not in st.session_state:
-    st.session_state.input1 = 1
-if 'input2' not in st.session_state:
-    st.session_state.input2 = 1
-if "next_day" not in st.session_state:
-    st.session_state["next_day"] = None
-if "a_datetime" not in st.session_state:
-    st.session_state["a_datetime"] = None
-#if "pages" not in st.session_state:
-#    st.session_state.pages = None
-#if "tipo" not in st.session_state:
-#    st.session_state.tipo = None
+
 
 # Llamar a la función para ejecutar el notebook
 mensaje_container = st.empty()
@@ -454,41 +463,22 @@ if archivo_cargado is not None:
     
 
         if openai_key and openai_org and start_class:
-            #st.write("Entra en empezar la clasificación")
             filtered_df = clasificacion_core_act.load_uploaded_file(archivo_cargado)
             if select_class=="Selected date":
                 # Filtrar el DataFrame original basado en la condición dada
                 filtered_df = filtered_df[(filtered_df['Begin'] >= st.session_state.a_datetime) & (filtered_df['Begin'] < st.session_state.next_day)]
-                # Mostrar un mensaje sobre el número de elementos que se están clasificando
-                mensaje_container.write(f"Classifying with GPT {len(filtered_df)} elements (it might take a while)...")
-                # Realizar la clasificación
-                filtered_df = clasificacion_core_act.gpt_classification(filtered_df, openai_key, openai_org)
-                #Separar las ventanas en varias filas
-                filtered_df = filtered_df.assign(Merged_titles=filtered_df['Merged_titles'].str.split(';')).explode('Merged_titles')
-                filtered_df['ID'] = range(1,len(filtered_df)+1)
-                filtered_df = filtered_df.reset_index(drop=True)
                 st.session_state.df_original['Zero_shot_classification'] = filtered_df['Zero_shot_classification']
-
-                # Marcar que el notebook se ha ejecutado
-                st.session_state.notebook_ejecutado = True
-
+                classifying_selected(filtered_df,openai_key, openai_org, "Selected date")
             
             elif select_class == "Selected rows":
-                #st.write("filas seleccionadas", st.session_state.filas_seleccionadas)
                 index = [x - 1 for x in st.session_state.filas_seleccionadas]
-                mensaje_container.write(f"Classifying with GPT {len(st.session_state.df_original.iloc[index])} elements (it might take a while)...")
-                df_filas = clasificacion_core_act.gpt_classification(st.session_state.df_original.iloc[index], openai_key, openai_org)#, mensaje_container)
-                st.session_state.df_original.loc[st.session_state.df_original['ID'].isin(st.session_state.filas_seleccionadas), 'Zero_shot_classification']= df_filas['Zero_shot_classification']
-                filtered_df = st.session_state.df_original
-                st.session_state.notebook_ejecutado = True
+                classifying_selected(st.session_state.df_original.iloc[index],openai_key, openai_org,"Selected rows")
+                
             else:    
-                mensaje_container.write(f"Classifying with GPT {len(filtered_df)} elements (it might take a while)...")
-                filtered_df = clasificacion_core_act.gpt_classification(filtered_df, openai_key, openai_org)#, mensaje_container)
-                filtered_df = filtered_df.assign(Merged_titles=filtered_df['Merged_titles'].str.split(';')).explode('Merged_titles')
-                filtered_df['ID'] = range(1,len(filtered_df)+1)
-                filtered_df = filtered_df.reset_index(drop=True)
-                st.session_state.df_original['Zero_shot_classification'] = filtered_df['Zero_shot_classification']
-                st.session_state.notebook_ejecutado = True
+                classifying_selected(filtered_df,openai_key, openai_org, "All")
+
+            # Marcar que el notebook se ha ejecutado    
+            st.session_state.notebook_ejecutado = True
         else:
             filtered_df = clasificacion_core_act.simple_load_file(archivo_cargado)
             if "Zero_shot_classification" not in filtered_df.columns:
