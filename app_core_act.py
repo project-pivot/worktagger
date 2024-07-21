@@ -439,11 +439,35 @@ dicc_core, dicc_subact, dicc_core_color = load_activities()
 all_sub = [f"{s} - {c}" for c in dicc_subact for s in dicc_subact[c]]
 
 
+
 # Subir el archivo desde Streamlit
 with st.expander("Click for upload"):
     archivo_cargado = st.file_uploader("Upload a file", type=["csv"], key="source_file", on_change=changed_file)
 
-load_state_vars()
+if "notebook_ejecutado" not in st.session_state:
+    st.session_state["notebook_ejecutado"] = False
+
+if "esperando_resultados" not in st.session_state:
+    st.session_state["esperando_resultados"] = True
+
+if "batch_size" not in st.session_state:
+    st.session_state["batch_size"] = 10
+if "current_page" not in st.session_state:
+    st.session_state["current_page"] = 1
+if "total_pages" not in st.session_state:
+    st.session_state["total_pages"] = 1
+if "last_acts" not in st.session_state:
+    st.session_state["last_acts"] = ["","",""]
+if "last_df" not in st.session_state:
+    st.session_state["last_df"] = None
+if 'input1' not in st.session_state:
+    st.session_state.input1 = 1
+if 'input2' not in st.session_state:
+    st.session_state.input2 = 1
+if "next_day" not in st.session_state:
+    st.session_state["next_day"] = None
+if "a_datetime" not in st.session_state:
+    st.session_state["a_datetime"] = None
 
 
 
