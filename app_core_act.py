@@ -20,30 +20,6 @@ warnings.filterwarnings("ignore")
 
 @st.cache_data
 
-def load_state_vars():
-    if "notebook_ejecutado" not in st.session_state:
-        st.session_state["notebook_ejecutado"] = False
-    if "esperando_resultados" not in st.session_state:
-        st.session_state["esperando_resultados"] = True
-    if "batch_size" not in st.session_state:
-        st.session_state["batch_size"] = 10
-    if "current_page" not in st.session_state:
-        st.session_state["current_page"] = 1
-    if "total_pages" not in st.session_state:
-        st.session_state["total_pages"] = 1
-    if "last_acts" not in st.session_state:
-        st.session_state["last_acts"] = ["","",""]
-    if "last_df" not in st.session_state:
-        st.session_state["last_df"] = None
-    if 'input1' not in st.session_state:
-        st.session_state.input1 = 1
-    if 'input2' not in st.session_state:
-        st.session_state.input2 = 1
-    if "next_day" not in st.session_state:
-        st.session_state["next_day"] = None
-    if "a_datetime" not in st.session_state:
-        st.session_state["a_datetime"] = None 
-          
 def load_activities():
     return core_act.load_activities()
 
@@ -160,6 +136,11 @@ def guardar_boton():
     seleccion_core_act =[x['core_act'] for x in st.session_state.last_acts if x!="" and x['subact'] == seleccion_subact[0]] 
 
     filas_seleccionadas = st.session_state.filas_seleccionadas
+    st.session_state.change_history = {}
+    st.session_state.change_history_core = {}
+    for fila in filas_seleccionadas:
+        st.session_state.change_history[fila] = st.session_state.df_original.loc[fila, 'Subactivity']
+        st.session_state.change_history_core[fila] = st.session_state.df_original.loc[fila, 'Zero_shot_classification']
 
 
     if seleccion_core_act[0] == "all_select":
@@ -188,6 +169,14 @@ def guardar():
         st.session_state.last_acts.pop(0)
         st.session_state.last_acts.append(dicc_aux)
     filas_seleccionadas = st.session_state.filas_seleccionadas
+    st.session_state.change_history = {}
+    st.session_state.change_history_core = {}
+    for fila in filas_seleccionadas:
+        st.session_state.change_history[fila] = st.session_state.df_original.loc[fila, 'Subactivity']
+        st.session_state.change_history_core[fila] = st.session_state.df_original.loc[fila, 'Zero_shot_classification']
+        
+        
+    #st.write(st.session_state.change_history)
 
 
     if seleccion_core_act[0] == "all_select":
@@ -205,6 +194,18 @@ def guardar():
         df_original.loc[df['ID'].isin(filas_seleccionadas), 'Zero_shot_classification'] = seleccion_core_act*len(filas_seleccionadas)
    
     reset()
+
+def deshacer():
+    df_original = st.session_state.df_original
+    filas_seleccionadas = list(st.session_state.change_history.keys())
+    valores_subact = list(st.session_state.change_history.values())
+    valores_core = list(st.session_state.change_history_core.values())
+    df_original.loc[df['ID'].isin(filas_seleccionadas), 'Subactivity']= valores_subact
+    df_original.loc[df['ID'].isin(filas_seleccionadas), 'Zero_shot_classification']= valores_core
+
+
+    reset()
+
     
 
 def to_csv(df):
@@ -269,11 +270,7 @@ def classifying_selected(df,openai_key, openai_org, selected):
 
 
 def clasificar_manualmente(df):
-    go_back = st.button("Back", disabled=True, on_click = going_back)
-    if go_back:
-        df = st.session_state.last_df
-        st.session_state.original = st.session_state.last_df
-        st.session_state.df = st.session_state.last_df
+    go_back = st.button("Back", disabled=False, on_click = deshacer)
         
     column_config = {
         "Change": st.column_config.CheckboxColumn(
@@ -468,6 +465,11 @@ if "next_day" not in st.session_state:
     st.session_state["next_day"] = None
 if "a_datetime" not in st.session_state:
     st.session_state["a_datetime"] = None
+if "change_history" not in st.session_state:
+    st.session_state["change_history"] = {}
+if "change_history_core" not in st.session_state:
+    st.session_state["change_history_core"] = {}
+
 
 
 
