@@ -82,7 +82,7 @@ def paginate_df(dataset, tipo):
         batch_size = st.selectbox("Page Size", options=[10,20,50,100, "all day"], index=0, key="page_size")
         if batch_size=="all day":
             batch_size = len(dataset)
-            
+
     with botton_menu[1]:
         total_pages = math.ceil(len(dataset)/ batch_size) 
 
@@ -309,7 +309,10 @@ def changed_file():
         if "df" in st.session_state:
             del st.session_state["df"]
         if "df_original" in st.session_state:
-            del st.session_state["df_original"]        
+            del st.session_state["df_original"]   
+
+def reset_current_page():
+    st.session_state["current_page"] = 1
 
 
 st.set_page_config(layout="wide")
@@ -404,7 +407,7 @@ if not st.session_state.esperando_resultados:
 
         st.write(f"Date range: From {min_date} to {max_date}")
         
-        a_date = st.date_input("Pick a date", min_value=min_date, max_value=max_date, value=min_date)
+        a_date = st.date_input("Pick a date", min_value=min_date, max_value=max_date, value=min_date, on_change=reset_current_page)
         selected_time = st.time_input("Pick a time", value=dt.time(6, 0))
         # Obtener la fecha y hora seleccionadas
         a_datetime = dt.datetime.combine(a_date, selected_time)
