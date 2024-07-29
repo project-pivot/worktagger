@@ -24,7 +24,7 @@ def simple_load_file(loaded_file):
     ficheros_subidos.seek(0)
 
     df = pd.read_csv(ficheros_subidos,sep=";")
-    if "Zero_shot_classification" in df.columns:
+    if "Core_Activity" in df.columns:
         return df
     else:
         df['Merged_titles'] = df['App'] +" - "+ df["Title"]
@@ -205,7 +205,7 @@ def gpt_classification(filtered_df, openai_key=None, openai_org=None):
     labels = clf.predict(truncated_prompts)
 
     # Add the predicted labels to a new column
-    filtered_df["Zero_shot_classification"] = labels
+    filtered_df["Core_Activity"] = labels
 
     return filtered_df
 
