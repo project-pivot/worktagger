@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 
+from random import randrange
+
 from skllm import MultiLabelZeroShotGPTClassifier
 from skllm import ZeroShotGPTClassifier
 from skllm.config import SKLLMConfig
@@ -37,6 +39,82 @@ def simple_load_file(loaded_file):
         df["Duration"] = df['End'] - df['Begin']
         return df[df['Type'] == 'Computer work'].copy()
 
+
+def classify(df, openai_key=None, openai_org=None):
+    groups = (df['End'] != df['Begin'].shift(1)).cumsum()
+    groups.name = "groups"
+    merged_titles = df['Merged_titles'].groupby(groups).apply(lambda x: ';'.join(x))
+    X = merged_titles.tolist()
+    labels = gpt_predict_labels(X, openai_key, openai_org)
+    result = pd.merge(left=groups, left_on="groups", right=pd.Series(labels, name="labels", index=pd.RangeIndex(start=1, stop=len(labels)+1)), right_index=True)
+    return result['labels']
+    
+
+def prepare_for_classification(df):
+    #We add new rows when there is a gap in the time between two rows, and add the rows to the data, with the category "Computer break".
+    new_rows = []
+    for i in range(len(df) - 1):
+        current_end_time = df.loc[i, 'End']
+        next_start_time = df.loc[i + 1, 'Begin']
+        if current_end_time != next_start_time:
+            new_row = {'App': "n.a.", 'Type': "n.a.", 'Title': "Computer break", 'Begin': current_end_time, 'End': next_start_time, 'Duration': next_start_time - current_end_time, 'Type': "Computer break"}
+            new_rows.append(new_row)
+
+    df = pd.concat([df, pd.DataFrame(new_rows)], ignore_index=True)
+
+    #Merge all titles between computer breaks.
+    df_merged_titles = df
+
+    # Sort the DataFrame by 'Begin' to ensure the data is in chronological order
+    df_merged_titles = df.sort_values(by='Begin')
+
+    # Add a new column 'Previous_App' to represent the app in the previous row
+    df_merged_titles['Previous_App'] = df_merged_titles['App'].shift(1)
+
+    # Group by 'Type' and create a new column 'Group' to identify consecutive rows with the same 'Type'
+    df_merged_titles['Group'] = (df_merged_titles['Type'] != df_merged_titles['Type'].shift(1)).cumsum()
+
+    # Define a custom aggregation function for the 'agg' method
+    def custom_aggregation(group):
+        return pd.Series({
+            'Merged_titles': ';'.join(map(str, group['Merged_titles'])),
+            'Begin': group['Begin'].iloc[0],
+            'End': group['End'].iloc[-1],
+            'App': group['App'].iloc[0],
+            'Type': group['Type'].iloc[0],
+            'Duration': group['Duration'].sum()  
+        })
+    
+    # Group by 'Type' and 'Group', and apply the custom aggregation function
+    result_df = df_merged_titles.groupby(['Type', 'Group']).apply(custom_aggregation).reset_index(drop=True)
+
+    # Drop the temporary 'Group' column if it exists
+    if 'Group' in result_df.columns:
+        result_df.drop(columns=['Group'], inplace=True)
+
+    # Sort the resulting DataFrame by the 'Begin' column
+    result_df.sort_values(by='Begin', inplace=True)
+
+    # Reset the index after sorting
+    result_df.reset_index(drop=True, inplace=True)
+
+    #Add a column with the most occurring title.
+
+    # Define a custom function to find the most occurring title in a semicolon-separated string
+    def find_most_occurring_title(merged_titles):
+        titles = merged_titles.split(';')
+        title_counts = pd.Series(titles).value_counts()
+        most_occuring_title = title_counts.idxmax()
+        return most_occuring_title
+
+    # Apply the custom function to each row in the DataFrame and create a new column
+    result_df['Most_occuring_title'] = result_df['Merged_titles'].apply(find_most_occurring_title)
+
+    #Filter the dataframe to only contain rows where type is computer work, because I only want to classify those rows.
+
+    filtered_df = result_df[result_df['Type'] == 'Computer work'].copy()
+
+    return filtered_df    
 
 
 
@@ -135,6 +213,52 @@ def gpt_classification(filtered_df, openai_key=None, openai_org=None):
     # Assuming result_df is a DataFrame with a column "Merged_titles"
     X = filtered_df["Merged_titles"].tolist()
 
+    labels = gpt_predict_labels(X, openai_key, openai_org)
+    # Add the predicted labels to a new column
+    filtered_df["Zero_shot_classification"] = labels
+
+    return filtered_df
+
+
+def gpt_predict_labels_fake(X, openai_key=None, openai_org=None):
+    core_activities = [
+        "Faculty plan/capacity group plan",
+        "Management of education and research",
+        "Human Resources policy",
+        "Organizational matters",
+        "Programme development" ,
+        "Acquisition of contract teaching and research" ,
+        "Accountability for contract teaching and research" ,
+        "Advancing/communicating scientific knowledge and insight",
+        "Working groups and committees",
+        "Contribution to the research group or lab",
+        "Organization of (series of) events",
+        "Provision of education",
+        "Student supervision" ,
+        "PhD candidates" ,
+        "Education development" ,
+        "Testing" ,
+        "Education evaluation" ,
+        "Education coordination" ,
+        "Research development" ,
+        "Assessment of research" ,
+        "Execution of research" ,
+        "Publication of research" ,
+        "Research coordination" ,
+        "Research proposal" ,
+        "Research plan" ,
+        "Performing research" ,
+        "Doctoral thesis" 
+    ]
+
+    return [core_activities[randrange(len(core_activities))] for x in X]
+
+
+
+    
+
+def gpt_predict_labels(X, openai_key=None, openai_org=None):
+
     core_activities = {
         "Faculty plan/capacity group plan": "Provide input and collect and document ideas and priorities from the chair",
         "Management of education and research": "Managing and supervising the education and research corresponding to the chair",
@@ -204,8 +328,6 @@ def gpt_classification(filtered_df, openai_key=None, openai_org=None):
     # Predict labels for the truncated prompts
     labels = clf.predict(truncated_prompts)
 
-    # Add the predicted labels to a new column
-    filtered_df["Zero_shot_classification"] = labels
+    return labels
 
-    return filtered_df
 

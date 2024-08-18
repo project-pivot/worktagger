@@ -77,13 +77,13 @@ def update_input_current_page_after():
     st.session_state.input_current_page_after = st.session_state.current_page
 
 def paginate_df(dataset, tipo):
-    botton_menu = st.columns((4,1,1))
-    with botton_menu[2]:
-        batch_size = st.selectbox("Page Size", options=[10,20,50,100, "all day"], index=0, key="page_size")
+    top_menu = st.columns((4,1,1))
+    with top_menu[2]:
+        batch_size = st.selectbox("Page Size", options=[10,20,50,100, "all day"], index=2, key="page_size")
         if batch_size=="all day":
             batch_size = len(dataset)
 
-    with botton_menu[1]:
+    with top_menu[1]:
         total_pages = math.ceil(len(dataset)/ batch_size) 
 
         if st.session_state.current_page > total_pages:
@@ -93,7 +93,7 @@ def paginate_df(dataset, tipo):
 
         st.number_input('Page',min_value = 0, max_value = total_pages,  value=st.session_state.current_page, key='input_current_page_before', on_change=update_input_current_page_before)
         
-    with botton_menu[0]:
+    with top_menu[0]:
         st.markdown(f"Page **{st.session_state.current_page}** of **{total_pages}** ")
 
     pages = split_df(dataset,batch_size)
@@ -213,7 +213,7 @@ def resaltar_principio_fin_bloques(fila):
 def asignar_color_sin_estilos(s):
     return ['background-color:#FFFFFF'] * len(s)
 
-def clasificar_manualmente(df, batch_size, total_pages):
+def display_events_table(df, batch_size, total_pages):
     go_back = st.button("Back", disabled=True, on_click = going_back)
     if go_back:
         df = st.session_state.last_df
@@ -232,7 +232,7 @@ def clasificar_manualmente(df, batch_size, total_pages):
         '': None
     }
 
-    # Mostrar la interfaz de edición
+    # Shows table
     edited_df = st.data_editor(
         df,
         column_config=column_config,
@@ -246,66 +246,67 @@ def clasificar_manualmente(df, batch_size, total_pages):
     with botton_menu[2]:
         st.number_input('Page',min_value = 1, max_value = total_pages, value=st.session_state.current_page, key='input_current_page_after', on_change=update_input_current_page_after)
 
-    # Filtrar las filas que han sido seleccionadas para cambiar la clasificación
+    # Filter rows that have been selected
     filas_seleccionadas = edited_df[edited_df['Change']]['ID'].tolist()
     st.session_state.filas_seleccionadas = filas_seleccionadas
 
-    # Mostrar una selección para cambiar la clasificación manualmente
-    with st.sidebar:
-        st.selectbox("Search all subactivities", key="all_select", options = [''] + all_sub, on_change=save_all_select)
-
-        contenedores={}
-        contenedores["Last subactivities"] = st.container()
-        boton = None
-        with contenedores["Last subactivities"]:
-            st.markdown("###  Last Subactivities")
-            ll = [x for x in st.session_state.last_acts if x != ""]            
-            subacts = []
-            for activity in ll:
-                if not activity['subact'] in subacts:
-                    boton = creacion_botones(activity)
-                    subacts.append(activity['subact'])
-
-        for category in dicc_core.keys():
-            contenedores[category] = st.container()
-            with contenedores[category]:
-                st.markdown("### {}".format(category))
-                for activity in dicc_core[category]:
-                    selectbox = create_selectbox(activity['core_activity'])
-
-        
-        st.markdown(
-            """<style>           
-
-            .element-container button {
-                color: black;
-                width: 100%; /* Ancho fijo para todos los botones */
-                text-align: center;
-                display: inline-block;
-                
-                border-radius: 4px;
-            }
-
-            </style>""",
-            unsafe_allow_html=True,
-        )
-        if selectbox:
-            st.success(f'Selected row sort order updated successfully.')
-            edited_df['Change'] = False
-            st.empty()
-        if boton:
-            st.success(f'Selected row sort order updated successfully.')
-            edited_df['Change'] = False
-            st.empty()
-
     st.markdown('</div>', unsafe_allow_html=True)
+    return filas_seleccionadas
+
+
+def manual_classification_sidebar():
+    st.selectbox("Search all subactivities", key="all_select", options = [''] + all_sub, on_change=save_all_select)
+
+    contenedores={}
+    contenedores["Last subactivities"] = st.container()
+    boton = None
+    with contenedores["Last subactivities"]:
+        st.markdown("###  Last Subactivities")
+        ll = [x for x in st.session_state.last_acts if x != ""]            
+        subacts = []
+        for activity in ll:
+            if not activity['subact'] in subacts:
+                boton = creacion_botones(activity)
+                subacts.append(activity['subact'])
+
+    for category in dicc_core.keys():
+        contenedores[category] = st.container()
+        with contenedores[category]:
+            st.markdown("### {}".format(category))
+            for activity in dicc_core[category]:
+                selectbox = create_selectbox(activity['core_activity'])
+
+    
+    st.markdown(
+        """<style>           
+
+        .element-container button {
+            color: black;
+            width: 100%; /* Ancho fijo para todos los botones */
+            text-align: center;
+            display: inline-block;
+            
+            border-radius: 4px;
+        }
+
+        </style>""",
+        unsafe_allow_html=True,
+    )
+    if selectbox:
+        st.success(f'Updated label successfully.')
+        #edited_df['Change'] = False
+        st.empty()
+    if boton:
+        st.success(f'Updated label successfully.')
+        #edited_df['Change'] = False
+        st.empty()
+
+
 
 
 def changed_file():
     # Delete all the items in Session state
     if st.session_state["source_file"]:
-        del st.session_state["notebook_ejecutado"]    
-        del st.session_state["esperando_resultados"]    
         if "df" in st.session_state:
             del st.session_state["df"]
         if "df_original" in st.session_state:
@@ -313,6 +314,42 @@ def changed_file():
 
 def reset_current_page():
     st.session_state["current_page"] = 1
+
+def automated_classification():
+    with st.expander("Automated labeling"):
+        openai_key = st.text_input("Set OpenAI key", type="password")
+        openai_org = st.text_input("Set OpenAI org", type="password")
+        select_class = st.selectbox("Choose what data you want to classify", ["All", "Selected date", "Selected rows"], index=1)
+        
+        st.button("Click to start classification", disabled=not (openai_key and openai_org), on_click=run_auto_classify, args=(select_class, openai_key, openai_org)) 
+
+def run_auto_classify(select_class, openai_key, openai_org):    
+    all = st.session_state.df_original 
+
+    if select_class=="Selected date":
+        a_datetime = st.session_state.a_datetime
+        next_day = st.session_state.next_day
+        filter_app = (all['Begin'] >= a_datetime) & (all['Begin'] < next_day)       
+        to_classify = all[filter_app]
+    
+    elif select_class == "Selected rows":
+        selected_rows = st.session_state.filas_seleccionadas
+        index = [x - 1 for x in selected_rows]
+        to_classify = all.iloc[index]
+        filter_app = all['ID'].isin(selected_rows)
+
+    else:
+        to_classify = all
+        filter_app = None
+
+    mensaje_container.write(f"Classifying with GPT {len(to_classify)} elements (it might take a while)...")
+    classification = clasificacion_core_act.classify(to_classify, openai_key, openai_org)
+    if filter_app is not None:
+        all.loc[filter_app,'Zero_shot_classification'] = classification
+        all.loc[filter_app,'Subactivity'] = "Unspecified "+classification
+    else:
+        all['Zero_shot_classification'] = classification
+        all['Subactivity'] = "Unspecified "+classification
 
 
 st.set_page_config(layout="wide")
@@ -322,15 +359,7 @@ all_sub = [f"{s} - {c}" for c in dicc_subact for s in dicc_subact[c]]
 
 # Upload file
 with st.expander("Click for upload"):
-    openai_key = st.text_input("Set OpenAI key", type="password")
-    openai_org = st.text_input("Set OpenAI org", type="password")
     archivo_cargado = st.file_uploader("Upload a file", type=["csv"], key="source_file", on_change=changed_file)
-
-if "notebook_ejecutado" not in st.session_state:
-    st.session_state["notebook_ejecutado"] = False
-
-if "esperando_resultados" not in st.session_state:
-    st.session_state["esperando_resultados"] = True
 
 if "current_page" not in st.session_state:
     st.session_state["current_page"] = 1
@@ -340,29 +369,18 @@ if "last_acts" not in st.session_state:
     st.session_state["last_acts"] = ["","",""]
 if "last_df" not in st.session_state:
     st.session_state["last_df"] = None
-
+if "next_day" not in st.session_state:
+    st.session_state["next_day"] = None
+if "a_datetime" not in st.session_state:
+    st.session_state["a_datetime"] = None
 
 mensaje_container = st.empty()
-if archivo_cargado is not None and not st.session_state.notebook_ejecutado:
+if archivo_cargado is not None:
     mensaje_container.write("Loading...")
-
-    if openai_key and openai_org:
-        filtered_df = clasificacion_core_act.load_uploaded_file(archivo_cargado)
-        mensaje_container.write(f"Classifying with GPT {len(filtered_df)} elements (it might take a while)...")
-        filtered_df = clasificacion_core_act.gpt_classification(filtered_df, openai_key, openai_org)#, mensaje_container)
-        st.session_state.notebook_ejecutado = True
-    else:
-        filtered_df = clasificacion_core_act.simple_load_file(archivo_cargado)
-        if "Zero_shot_classification" not in filtered_df.columns:
-            filtered_df['Zero_shot_classification'] = "No work-related"
-        mensaje_container.write("File loaded")
-
-    st.session_state.esperando_resultados = False
-
-
-# Verificar si se encontró el archivo de resultados
-if not st.session_state.esperando_resultados:
-    # El archivo de resultados ha sido encontrado, mostrar mensaje de éxito
+    filtered_df = clasificacion_core_act.simple_load_file(archivo_cargado)
+    if "Zero_shot_classification" not in filtered_df.columns:
+        filtered_df['Zero_shot_classification'] = "No work-related"
+    mensaje_container.write("File loaded")
 
     if "df" not in st.session_state:
         data = filtered_df
@@ -411,17 +429,26 @@ if not st.session_state.esperando_resultados:
         selected_time = st.time_input("Pick a time", value=dt.time(6, 0))
         # Obtener la fecha y hora seleccionadas
         a_datetime = dt.datetime.combine(a_date, selected_time)
+        st.session_state.a_datetime = a_datetime
         # Calcular la fecha y hora exactas de 24 horas posteriores
         next_day = a_datetime + dt.timedelta(hours=24)
+        st.session_state.next_day = next_day
 
 
-    st.session_state.df = df[(df['Begin'] >= a_datetime) & (df['Begin'] < next_day)]
+    selected_df = df[(df['Begin'] >= a_datetime) & (df['Begin'] < next_day)]
+    st.session_state.df = selected_df
     if len(st.session_state.df) == 0:
         st.error("There is no data for the selected date 😞. Why don't you try with another one? 😉")
     else:
         try:
             batch_size, total_pages = paginate_df(st.session_state.df, pagination_style)
-            clasificar_manualmente(st.session_state.df, batch_size, total_pages)
+            selected_rows = display_events_table(st.session_state.df, batch_size, total_pages)
+
+            with st.sidebar:
+                st.title("Classify activities")
+                automated_classification()
+                manual_classification_sidebar()
+
             download_csv(df)
         except Exception as e: 
             print(f"There was an error: {e}")
