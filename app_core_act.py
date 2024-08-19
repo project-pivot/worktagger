@@ -18,13 +18,13 @@ def load_activities():
     return activities_loader.load_activities()
 
 def create_selectbox(core_act):    
-    selectbox = st.selectbox(core_act, key=core_act, options = [''] + dicc_subact[core_act], on_change=lambda: save_select(core_act))
+    selectbox = st.selectbox(core_act, key=core_act, options = [''] + dicc_subact[core_act], on_change=save_select, args=(core_act,))
     change_select_box_color(core_act,'black', dicc_core_color[core_act])
 
     return selectbox
 
-def creacion_botones(option):
-    boton = st.button(option['subact'], key=f'boton_{option["subact"]}', on_click=lambda: save_button(option['core_act'], option['subact']))
+def create_buttons(option):
+    boton = st.button(option['subact'], key=f'boton_{option["subact"]}', on_click=save_button, args=(option['core_act'], option['subact']))
     change_button_color(option['subact'], 'black', dicc_core_color[option['core_act']])
 
     return boton
@@ -76,49 +76,48 @@ def update_input_current_page_after():
     st.session_state.input_current_page_before = st.session_state.current_page
     st.session_state.input_current_page_after = st.session_state.current_page
 
-def paginate_df(dataset, tipo):
-    top_menu = st.columns((4,1,1))
-    with top_menu[2]:
+def paginate_df(dataset):
+    pagination_menu = st.columns((4,1,1))
+    with pagination_menu[2]:
         batch_size = st.selectbox("Page Size", options=[10,20,50,100, "all day"], index=2, key="page_size")
         if batch_size=="all day":
             batch_size = len(dataset)
 
-    with top_menu[1]:
+    with pagination_menu[1]:
         total_pages = math.ceil(len(dataset)/ batch_size) 
 
         if st.session_state.current_page > total_pages:
             st.session_state.current_page = total_pages
-            st.session_state.input_current_page_before = st.session_state.current_page
-            st.session_state.input_current_page_after = st.session_state.current_page
 
-        st.number_input('Page',min_value = 0, max_value = total_pages,  value=st.session_state.current_page, key='input_current_page_before', on_change=update_input_current_page_before)
+        st.session_state.input_current_page_after = st.session_state.current_page
+        st.session_state.input_current_page_before = st.session_state.current_page
+        st.number_input('Page',min_value = 1, max_value = total_pages,  key='input_current_page_before', on_change=update_input_current_page_before)
         
-    with top_menu[0]:
+    with pagination_menu[0]:
         st.markdown(f"Page **{st.session_state.current_page}** of **{total_pages}** ")
 
     pages = split_df(dataset,batch_size)
 
+    page = pages[st.session_state.current_page-1]
 
-    if tipo=="Sin estilos":
-        st.session_state.df = pages[st.session_state.current_page-1].style.apply(asignar_color_sin_estilos,axis=1)
-    
-    elif tipo=="Estilos":
-        st.session_state.df = pages[st.session_state.current_page-1].style.apply(asignar_color,axis=1)
-    
-    else: 
-        st.session_state.df = pages[st.session_state.current_page-1].style.apply(resaltar_principio_fin_bloques, axis=1)
+    return page, batch_size, total_pages
 
-    return batch_size, total_pages
+def apply_styles(page, toggle_block_colours, toggle_begin_end_colours):
+    if toggle_block_colours and not toggle_begin_end_colours:
+        result = page.style.apply(asignar_color,axis=1)
+    elif toggle_begin_end_colours:
+        result = page.style.apply(resaltar_principio_fin_bloques, axis=1)
+    else:
+        result = page.style.apply(asignar_color_sin_estilos,axis=1)
+
+    return result
         
 def going_back():
-    st.session_state.df = st.session_state.last_df
-    st.write("st.df y st.last se supone que son iguales")
+    st.session_state.df_original = st.session_state.undo_df
+    st.session_state.undo_df = None
+    #st.write("st.df y st.last se supone que son iguales")
 
-def reset_selects():
-    for core_act in dicc_subact.keys():
-        st.session_state[core_act] = ""
 
-    st.session_state["all_select"] = ""
 
 def save_button(core_act, sub_act):
     try:
@@ -139,7 +138,7 @@ def save_all_select():
 
             apply_label_to_selection(seleccion_core_act, seleccion_subact)
             update_last_3_buttons(seleccion_core_act, seleccion_subact)
-            reset_selects()
+            st.session_state.all_select = ""
 
     except Exception as e:
         print(f"There was an error saving all_select: {e}")
@@ -150,23 +149,31 @@ def save_select(core):
         subact = st.session_state[core]
         apply_label_to_selection(core, subact)
         update_last_3_buttons(core, subact)
-        reset_selects()
+        st.session_state[core] = ""
     except Exception as e:
         print(f"There was an error saving select {core}: {e}")
         st.error("Error saving")
     
 def apply_label_to_selection(core, subact):
+    if not "df_original" in st.session_state:
+        return
+    
     df_original = st.session_state.df_original
-    st.session_state.last_df = st.session_state.df
     filas_seleccionadas = st.session_state.filas_seleccionadas
+
+    st.session_state.undo_df = df_original.copy()
 
     df_original.loc[df['ID'].isin(filas_seleccionadas), 'Subactivity'] = subact
     df_original.loc[df['ID'].isin(filas_seleccionadas), 'Zero_shot_classification'] = core
 
 def update_last_3_buttons(core, subact):
+    if not "last_acts" in st.session_state:
+        return
+    
     dicc_aux = {"core_act": core, "subact":subact}
-    if dicc_aux not in st.session_state.last_acts:
-        st.session_state.last_acts.pop(0)
+    if dicc_aux not in st.session_state.last_acts:        
+        if len(st.session_state.last_acts) > 0:
+            st.session_state.last_acts.pop(0) 
         st.session_state.last_acts.append(dicc_aux)
 
 def to_csv(df):
@@ -201,10 +208,10 @@ def resaltar_principio_fin_bloques(fila):
     dif_tiempo_sig = (fila_sig['Begin']-valor_actual_e).total_seconds()/60 if fila_sig is not None else 0
 
     ls_estilos = asignar_color(fila)
-    if fila_sig is None or dif_tiempo_sig>tiempo_maximo_entre_actividades :
+    if fila_sig is None or dif_tiempo_sig>max_time_between_activities :
 
         ls_estilos[6] = 'background-color:#808080' 
-    if fila_ant is None or dif_tiempo_ant>tiempo_maximo_entre_actividades or fila.name==0 :
+    if fila_ant is None or dif_tiempo_ant>max_time_between_activities or fila.name==0 :
 
         ls_estilos[5] = 'background-color:#808080'
     return ls_estilos  
@@ -214,11 +221,7 @@ def asignar_color_sin_estilos(s):
     return ['background-color:#FFFFFF'] * len(s)
 
 def display_events_table(df, batch_size, total_pages):
-    go_back = st.button("Back", disabled=True, on_click = going_back)
-    if go_back:
-        df = st.session_state.last_df
-        st.session_state.original = st.session_state.last_df
-        st.session_state.df = st.session_state.last_df
+    st.button("Undo", disabled=(st.session_state.undo_df is None), on_click = going_back)
         
     column_config = {
         "Change": st.column_config.CheckboxColumn(
@@ -244,7 +247,8 @@ def display_events_table(df, batch_size, total_pages):
     )
     botton_menu = st.columns((4,1,1))
     with botton_menu[2]:
-        st.number_input('Page',min_value = 1, max_value = total_pages, value=st.session_state.current_page, key='input_current_page_after', on_change=update_input_current_page_after)
+        st.session_state.input_current_page_after = st.session_state.current_page
+        st.number_input('Page',min_value = 1, max_value = total_pages, key='input_current_page_after', on_change=update_input_current_page_after)
 
     # Filter rows that have been selected
     filas_seleccionadas = edited_df[edited_df['Change']]['ID'].tolist()
@@ -266,16 +270,15 @@ def manual_classification_sidebar():
         subacts = []
         for activity in ll:
             if not activity['subact'] in subacts:
-                boton = creacion_botones(activity)
+                boton = create_buttons(activity)
                 subacts.append(activity['subact'])
 
     for category in dicc_core.keys():
         contenedores[category] = st.container()
         with contenedores[category]:
-            st.markdown("### {}".format(category))
+            st.markdown(f"### {category}")
             for activity in dicc_core[category]:
                 selectbox = create_selectbox(activity['core_activity'])
-
     
     st.markdown(
         """<style>           
@@ -306,24 +309,26 @@ def manual_classification_sidebar():
 
 def changed_file():
     # Delete all the items in Session state
-    if st.session_state["source_file"]:
-        if "df" in st.session_state:
-            del st.session_state["df"]
-        if "df_original" in st.session_state:
-            del st.session_state["df_original"]   
+    #if st.session_state["source_file"]:
+    if "df_original" in st.session_state:
+        del st.session_state["df_original"]   
 
 def reset_current_page():
     st.session_state["current_page"] = 1
 
 def automated_classification():
     with st.expander("Automated labeling"):
-        openai_key = st.text_input("Set OpenAI key", type="password")
-        openai_org = st.text_input("Set OpenAI org", type="password")
-        select_class = st.selectbox("Choose what data you want to classify", ["All", "Selected date", "Selected rows"], index=1)
+        with st.form(key='auto_labeling'):
+            st.text_input("Set OpenAI key", type="password", key='openai_key')
+            st.text_input("Set OpenAI org", type="password", key='openai_org')
+            st.selectbox("Choose what data you want to classify", ["All", "Selected date", "Selected rows"], index=1, key='auto_type')
         
-        st.button("Click to start classification", disabled=not (openai_key and openai_org), on_click=run_auto_classify, args=(select_class, openai_key, openai_org)) 
+            st.form_submit_button("Click to start classification", on_click=run_auto_classify) 
 
-def run_auto_classify(select_class, openai_key, openai_org):    
+def run_auto_classify():    
+    select_class = st.session_state.auto_type
+    openai_key = st.session_state.openai_key
+    openai_org = st.session_state.openai_org
     all = st.session_state.df_original 
 
     if select_class=="Selected date":
@@ -344,6 +349,7 @@ def run_auto_classify(select_class, openai_key, openai_org):
 
     mensaje_container.write(f"Classifying with GPT {len(to_classify)} elements (it might take a while)...")
     classification = clasificacion_core_act.classify(to_classify, openai_key, openai_org)
+    st.session_state.undo_df = all.copy()
     if filter_app is not None:
         all.loc[filter_app,'Zero_shot_classification'] = classification
         all.loc[filter_app,'Subactivity'] = "Unspecified "+classification
@@ -361,88 +367,61 @@ all_sub = [f"{s} - {c}" for c in dicc_subact for s in dicc_subact[c]]
 with st.expander("Click for upload"):
     archivo_cargado = st.file_uploader("Upload a file", type=["csv"], key="source_file", on_change=changed_file)
 
-if "current_page" not in st.session_state:
-    st.session_state["current_page"] = 1
-    st.session_state["input_current_page_before"] = 1
-    st.session_state["input_current_page_after"] = 1
-if "last_acts" not in st.session_state:
-    st.session_state["last_acts"] = ["","",""]
-if "last_df" not in st.session_state:
-    st.session_state["last_df"] = None
-if "next_day" not in st.session_state:
-    st.session_state["next_day"] = None
-if "a_datetime" not in st.session_state:
-    st.session_state["a_datetime"] = None
-
 mensaje_container = st.empty()
-if archivo_cargado is not None:
-    mensaje_container.write("Loading...")
-    filtered_df = clasificacion_core_act.simple_load_file(archivo_cargado)
-    if "Zero_shot_classification" not in filtered_df.columns:
-        filtered_df['Zero_shot_classification'] = "No work-related"
-    mensaje_container.write("File loaded")
 
-    if "df" not in st.session_state:
-        data = filtered_df
-        data_expanded = data.assign(Merged_titles=data['Merged_titles'].str.split(';')).explode('Merged_titles')
+if "df_original" not in st.session_state:
+    st.session_state["current_page"] = 1
+    st.session_state["last_acts"] = []
+    st.session_state["next_day"] = None
+    st.session_state["a_datetime"] = None
+    st.session_state["undo_df"] = None
+
+    if archivo_cargado is not None:
+        mensaje_container.write("Loading...")
+        data_expanded = clasificacion_core_act.simple_load_file(archivo_cargado)
+        mensaje_container.write("File loaded")
+
         data_expanded['ID'] = range(1,len(data_expanded)+1)
         data_expanded = data_expanded.reset_index(drop=True)
-        data_expanded['Begin'] = pd.to_datetime(data_expanded['Begin'], format='%d/%m/%Y %H:%M')
-        
+        data_expanded['Begin'] = pd.to_datetime(data_expanded['Begin'], format='%d/%m/%Y %H:%M')        
         data_expanded['End'] = pd.to_datetime(data_expanded['End'], format='%d/%m/%Y %H:%M')
         data_expanded['Begin Time'] =data_expanded['Begin'].dt.strftime('%H:%M')
         data_expanded['Ending Time']= data_expanded['End'].dt.strftime('%H:%M')
-        st.session_state.df = data_expanded
-        st.session_state.df['Change'] = False
-        st.session_state.df = data_expanded[['Change','ID','Merged_titles','Begin','End','Begin Time','Ending Time', 'Zero_shot_classification']]
-        ls =  st.session_state.df['Zero_shot_classification'].map(dicc_subact)
-        ls_subact = []
-        for el in ls:
-            ls_subact.append(el[0])
-
+        data_expanded['Change'] = False
+        st.session_state.df_original = data_expanded[['Change','ID','Merged_titles','Begin','End','Begin Time','Ending Time', 'Zero_shot_classification', 'Subactivity']]
         
-        st.session_state.df['Subactivity'] = ls_subact#["📊 Data Exploration"]*len(st.session_state.df)
-        
-        st.session_state.df_original = st.session_state.df
-
-    col00, col01 = st.columns(2)
-    with col01:     
-        toggle_block_colours = st.toggle('Blocks colours')
+if "df_original" in st.session_state:
+    select_date_col, select_colors_col = st.columns(2)
+    with select_colors_col:     
+        toggle_block_colours = st.toggle('Blocks colours', value=True)
         toggle_begin_end_colours = st.toggle('Begin-End colours')
-        tiempo_maximo_entre_actividades = st.slider("Maximum time between activities (minutes)", min_value=0, max_value=30, value=5)
-        if toggle_block_colours and not toggle_begin_end_colours:
-            pagination_style = "Estilos"
-        elif toggle_begin_end_colours:
-            pagination_style = "Resalto"
-        else:
-            pagination_style = "Sin estilos"
+        max_time_between_activities = st.slider("Maximum time between activities (minutes)", min_value=0, max_value=30, value=5)
     
-    with col00:
+    with select_date_col:
         df = st.session_state.df_original
-        df['Begin'] = pd.to_datetime(df['Begin'], format='%d/%m/%Y %H:%M', errors = 'coerce')  # Asegurarse de que la columna 'Begin' sea de tipo datetime
         min_date = df['Begin'].dt.date.min()
         max_date=df['Begin'].dt.date.max()
-
         st.write(f"Date range: From {min_date} to {max_date}")
         
         a_date = st.date_input("Pick a date", min_value=min_date, max_value=max_date, value=min_date, on_change=reset_current_page)
         selected_time = st.time_input("Pick a time", value=dt.time(6, 0))
-        # Obtener la fecha y hora seleccionadas
+
         a_datetime = dt.datetime.combine(a_date, selected_time)
         st.session_state.a_datetime = a_datetime
-        # Calcular la fecha y hora exactas de 24 horas posteriores
+
         next_day = a_datetime + dt.timedelta(hours=24)
         st.session_state.next_day = next_day
 
 
     selected_df = df[(df['Begin'] >= a_datetime) & (df['Begin'] < next_day)]
-    st.session_state.df = selected_df
-    if len(st.session_state.df) == 0:
+    
+    if len(selected_df) == 0:
         st.error("There is no data for the selected date 😞. Why don't you try with another one? 😉")
     else:
         try:
-            batch_size, total_pages = paginate_df(st.session_state.df, pagination_style)
-            selected_rows = display_events_table(st.session_state.df, batch_size, total_pages)
+            page, batch_size, total_pages = paginate_df(selected_df)
+            styled_page = apply_styles(page, toggle_block_colours, toggle_begin_end_colours)
+            selected_rows = display_events_table(styled_page, batch_size, total_pages)
 
             with st.sidebar:
                 st.title("Classify activities")

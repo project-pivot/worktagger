@@ -21,13 +21,13 @@ warnings.filterwarnings("ignore")
 # SKLLMConfig.set_openai_org(organizacion)
 
 
-def simple_load_file(loaded_file):
-    ficheros_subidos = io.BytesIO(loaded_file.read())
-    ficheros_subidos.seek(0)
+def simple_load_file(loaded_file, default_classification="No work-related"):
+    uploaded_file = io.BytesIO(loaded_file.read())
+    uploaded_file.seek(0)
 
-    df = pd.read_csv(ficheros_subidos,sep=";")
+    df = pd.read_csv(uploaded_file,sep=";")
     if "Zero_shot_classification" in df.columns:
-        return df
+        result = df
     else:
         df['Merged_titles'] = df['App'] +" - "+ df["Title"]
         #Adds a new column that specifies whether the type of recording is work or computer break.
@@ -36,8 +36,15 @@ def simple_load_file(loaded_file):
         df['Type'] = np.where(df['Title'].str.contains('NO_TITLE'), 'NO_TITLE', df['Type'])
         df['Begin'] = pd.to_datetime(df['Begin'], errors='coerce')
         df['End'] = pd.to_datetime(df['End'], errors='coerce')
-        df["Duration"] = df['End'] - df['Begin']
-        return df[df['Type'] == 'Computer work'].copy()
+        df['Duration'] = df['End'] - df['Begin']
+        df['Zero_shot_classification'] = "No work-related"
+
+        result = df[df['Type'] == 'Computer work'].copy()
+
+    if "Subactivity" not in result.columns:
+        result["Subactivity"] = "Unspecified " + result['Zero_shot_classification']
+
+    return result
 
 
 def classify(df, openai_key=None, openai_org=None):
