@@ -51,7 +51,8 @@ def simple_load_file(loaded_file, default_classification="No work-related"):
     if "Subactivity" not in result.columns:
         result["Subactivity"] = "Unspecified " + result['Activity']
 
-    print(f"Load {result.columns}")
+    if "Case" not in result.columns:
+        result["Case"] = None
 
     return result
 

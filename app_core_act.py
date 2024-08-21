@@ -17,22 +17,18 @@ warnings.filterwarnings("ignore")
 def load_activities():
     return activities_loader.load_activities()
 
-def create_selectbox(core_act):    
-    selectbox = st.selectbox(core_act, key=core_act, options = [''] + dicc_subact[core_act], on_change=save_select, args=(core_act,))
-    change_select_box_color(core_act,'black', dicc_core_color[core_act])
 
-    return selectbox
+def change_color(element_type, widget_label, font_color, background_color='transparent'):
+    if element_type == 'select_box':
+        query_selector = 'label'
+    elif element_type == 'button':
+        query_selector = 'button'
+    else:
+        return
 
-def create_buttons(option):
-    boton = st.button(option['subact'], key=f'boton_{option["subact"]}', on_click=save_button, args=(option['core_act'], option['subact']))
-    change_button_color(option['subact'], 'black', dicc_core_color[option['core_act']])
-
-    return boton
-
-def change_select_box_color(widget_label, font_color, background_color='transparent'):
     htmlstr = f"""
         <script>
-            var elements = window.parent.document.querySelectorAll('label');
+            var elements = window.parent.document.querySelectorAll('{query_selector}');
             for (var i = 0; i < elements.length; ++i) {{ 
                 if (elements[i].innerText == '{widget_label}') {{ 
                     elements[i].style.color ='{font_color}';
@@ -43,40 +39,18 @@ def change_select_box_color(widget_label, font_color, background_color='transpar
        """
     components.html(f"{htmlstr}", height=1, width=1)
 
-
-
-def change_button_color(widget_label, font_color, background_color='transparent'):
-    
-    htmlstr = f"""
-        <script>
-            var elements = window.parent.document.querySelectorAll('button');
-            for (var i = 0; i < elements.length; ++i) {{ 
-                if (elements[i].innerText == '{widget_label}') {{ 
-                    elements[i].style.color ='{font_color}';
-                    elements[i].style.background = '{background_color}'
-                }}
-            }}
-        </script>
-       """
-    components.html(f"{htmlstr}", height=1, width=1)
 
 def split_df(input_df, batch_size):
     df = [input_df.loc[i:i+batch_size-1,:] for i in range(input_df.index.min(),input_df.index.min()+len(input_df), batch_size)]
     return df
 
-# To update the shared value from input_number1
-def update_input_current_page_before():
-    st.session_state.current_page = st.session_state.input_current_page_before
-    st.session_state.input_current_page_after = st.session_state.current_page
-    st.session_state.input_current_page_before = st.session_state.current_page
-
-# To update the shared value from input_number2
-def update_input_current_page_after():
-    st.session_state.current_page = st.session_state.input_current_page_after
-    st.session_state.input_current_page_before = st.session_state.current_page
-    st.session_state.input_current_page_after = st.session_state.current_page
 
 def paginate_df(dataset):
+    def update_input_current_page_before():
+        st.session_state.current_page = st.session_state.input_current_page_before
+        st.session_state.input_current_page_after = st.session_state.current_page
+        st.session_state.input_current_page_before = st.session_state.current_page
+
     pagination_menu = st.columns((4,1,1))
     with pagination_menu[2]:
         batch_size = st.selectbox("Page Size", options=[10,20,50,100, "all day"], index=2, key="page_size")
@@ -112,49 +86,9 @@ def apply_styles(page, toggle_block_colours, toggle_begin_end_colours):
 
     return result
         
-def going_back():
-    st.session_state.df_original = st.session_state.undo_df
-    st.session_state.undo_df = None
-    #st.write("st.df y st.last se supone que son iguales")
 
 
-
-def save_button(core_act, sub_act):
-    try:
-        apply_label_to_selection(core_act, sub_act)
-    except Exception as e:
-        print(f"There was an error saving button {core_act}, {sub_act}: {e}")
-        st.error("Error saving")
-
-
-def save_all_select():
-    try: 
-        selected = st.session_state.all_select
-        split_selection = selected.split(" - ")
-
-        if len(split_selection) == 2:
-            seleccion_core_act = split_selection[1]
-            seleccion_subact = split_selection[0]
-
-            apply_label_to_selection(seleccion_core_act, seleccion_subact)
-            update_last_3_buttons(seleccion_core_act, seleccion_subact)
-            st.session_state.all_select = ""
-
-    except Exception as e:
-        print(f"There was an error saving all_select: {e}")
-        st.error("Error saving")
-
-def save_select(core):
-    try:
-        subact = st.session_state[core]
-        apply_label_to_selection(core, subact)
-        update_last_3_buttons(core, subact)
-        st.session_state[core] = ""
-    except Exception as e:
-        print(f"There was an error saving select {core}: {e}")
-        st.error("Error saving")
-    
-def apply_label_to_selection(core, subact):
+def apply_label_to_selection(**kwargs):
     if not "df_original" in st.session_state:
         return
     
@@ -163,18 +97,9 @@ def apply_label_to_selection(core, subact):
 
     st.session_state.undo_df = df_original.copy()
 
-    df_original.loc[df['ID'].isin(filas_seleccionadas), 'Subactivity'] = subact
-    df_original.loc[df['ID'].isin(filas_seleccionadas), 'Activity'] = core
+    for key in kwargs:
+        df_original.loc[df['ID'].isin(filas_seleccionadas), key] = kwargs[key]
 
-def update_last_3_buttons(core, subact):
-    if not "last_acts" in st.session_state:
-        return
-    
-    dicc_aux = {"core_act": core, "subact":subact}
-    if dicc_aux not in st.session_state.last_acts:        
-        if len(st.session_state.last_acts) > 0:
-            st.session_state.last_acts.pop(0) 
-        st.session_state.last_acts.append(dicc_aux)
 
 def to_csv(df):
     output = io.BytesIO()
@@ -220,21 +145,21 @@ def resaltar_principio_fin_bloques(fila):
 def asignar_color_sin_estilos(s):
     return ['background-color:#FFFFFF'] * len(s)
 
-def display_events_table(df, batch_size, total_pages, max_dur):
-    st.button("Undo", disabled=(st.session_state.undo_df is None), on_click = going_back)
-        
+def display_undo_button():
+    def undo_last_action():
+        st.session_state.df_original = st.session_state.undo_df
+        st.session_state.undo_df = None
+
+    st.button("Undo", disabled=(st.session_state.undo_df is None), on_click = undo_last_action)
+
+
+def display_events_table(df, batch_size, max_dur):        
     column_config = {
         "Change": st.column_config.CheckboxColumn(
             "Change",
             help="Choose the rows you want to apply the label",
             default=False,
         ),
-        # "Begin": st.column_config.DatetimeColumn(
-        #     label="Begining",
-        #     format="D MMM YYYY, h:mm a",
-        #     min_value=dt.datetime(2023, 6, 1),
-        #     max_value=dt.datetime(2025, 1, 1)
-        # ),        
         "Begin": None,
         "End": None,
         "ID": None,
@@ -252,77 +177,137 @@ def display_events_table(df, batch_size, total_pages, max_dur):
     edited_df = st.data_editor(
         df,
         column_config=column_config,
-        disabled=["ID", 'Merged_titles', 'Begin', 'End','Begin Time','Ending Time', 'App', 'Type', 'Duration', 'Most_occuring_title', 'Activity','Subactivity'],
+        disabled=["ID", 'Merged_titles', 'Begin', 'End','Begin Time','Ending Time', 'App', 'Type', 'Duration', 'Most_occuring_title', 'Activity','Subactivity', 'Case'],
         hide_index=True,
         key="selector",
         use_container_width = True,
         height= int(35.2*(batch_size+1))
     )
-    botton_menu = st.columns((4,1,1))
-    with botton_menu[2]:
-        st.session_state.input_current_page_after = st.session_state.current_page
-        st.number_input('Page',min_value = 1, max_value = total_pages, key='input_current_page_after', on_change=update_input_current_page_after)
 
     # Filter rows that have been selected
     filas_seleccionadas = edited_df[edited_df['Change']]['ID'].tolist()
     st.session_state.filas_seleccionadas = filas_seleccionadas
 
-    st.markdown('</div>', unsafe_allow_html=True)
     return filas_seleccionadas
+
+def display_pagination_bottom(total_pages):
+    def update_input_current_page_after():
+        st.session_state.current_page = st.session_state.input_current_page_after
+        st.session_state.input_current_page_before = st.session_state.current_page
+        st.session_state.input_current_page_after = st.session_state.current_page
+
+    botton_menu = st.columns((4,1,1))
+    with botton_menu[2]:
+        st.session_state.input_current_page_after = st.session_state.current_page
+        st.number_input('Page',min_value = 1, max_value = total_pages, key='input_current_page_after', on_change=update_input_current_page_after)
+
+
+def cases_classification():
+    def save_case_button(case_name):
+        try:
+            apply_label_to_selection(Case=case_name)
+        except Exception as e:
+            print(f"There was an error saving button {case_name}: {e}")
+            st.error("Error saving")
+
+    def add_new_case():
+        case_name = st.session_state.new_case_label
+        if case_name is not None and case_name != "":
+            try:
+                apply_label_to_selection(Case=case_name)
+                st.session_state.all_cases.add(case_name)
+            except Exception as e:
+                print(f"There was an error saving button {case_name}: {e}")
+                st.error("Error saving")
+
+    with st.form(key='new_cases', clear_on_submit=True, border=False):
+        [col1, col2] = st.columns([0.7, 0.3])
+        with col1:
+            st.text_input(label="Case label", label_visibility="collapsed", placeholder="Case label", key="new_case_label")
+        with col2:
+            st.form_submit_button(label="Assign", on_click=add_new_case)
+
+    if len(st.session_state.all_cases) > 1:
+        with st.container():
+            st.markdown("### Case labels")
+            for case in st.session_state.all_cases:
+                if case != "":
+                    st.button(case, on_click=save_case_button, args=(case,), use_container_width=True)
+
 
 
 def manual_classification_sidebar():
+
+    def update_last_3_buttons(core, subact):
+        if not "last_acts" in st.session_state:
+            return
+        
+        dicc_aux = {"core_act": core, "subact":subact}
+        if dicc_aux not in st.session_state.last_acts:        
+            if len(st.session_state.last_acts) > 2:
+                st.session_state.last_acts.pop(0) 
+            st.session_state.last_acts.append(dicc_aux)
+
+
+    def save_button(core_act, sub_act):
+        try:
+            apply_label_to_selection(Activity=core_act, Subactivity=sub_act)
+        except Exception as e:
+            print(f"There was an error saving button {core_act}, {sub_act}: {e}")
+            st.error("Error saving")
+
+
+    def save_all_select():
+        try: 
+            selected = st.session_state.all_select
+            split_selection = selected.split(" - ")
+
+            if len(split_selection) == 2:
+                seleccion_core_act = split_selection[1]
+                seleccion_subact = split_selection[0]
+
+                apply_label_to_selection(Activity=seleccion_core_act, Subactivity=seleccion_subact)
+                update_last_3_buttons(seleccion_core_act, seleccion_subact)
+                st.session_state.all_select = ""
+
+        except Exception as e:
+            print(f"There was an error saving all_select: {e}")
+            st.error("Error saving")
+
+    def save_select(core):
+        try:
+            subact = st.session_state[core]
+            apply_label_to_selection(Activity=core, Subactivity=subact)
+            update_last_3_buttons(core, subact)
+            st.session_state[core] = ""
+        except Exception as e:
+            print(f"There was an error saving select {core}: {e}")
+            st.error("Error saving")    
+
+    if len(st.session_state.last_acts) > 0:
+        with st.container():
+            st.markdown("###  Last Subactivities")
+            ll = [x for x in st.session_state.last_acts if x != ""]            
+            subacts = []
+            for activity in ll:
+                if not activity['subact'] in subacts:
+                    subacts.append(activity['subact'])
+                    st.button(activity['subact'], key=f'boton_{activity["subact"]}', on_click=save_button, args=(activity['core_act'], activity['subact']), use_container_width=True)
+                    change_color('button', activity['subact'], 'black', dicc_core_color[activity['core_act']])
+
     st.selectbox("Search all subactivities", key="all_select", options = [''] + all_sub, on_change=save_all_select)
 
-    contenedores={}
-    contenedores["Last subactivities"] = st.container()
-    boton = None
-    with contenedores["Last subactivities"]:
-        st.markdown("###  Last Subactivities")
-        ll = [x for x in st.session_state.last_acts if x != ""]            
-        subacts = []
-        for activity in ll:
-            if not activity['subact'] in subacts:
-                boton = create_buttons(activity)
-                subacts.append(activity['subact'])
-
     for category in dicc_core.keys():
-        contenedores[category] = st.container()
-        with contenedores[category]:
+        with st.container():
             st.markdown(f"### {category}")
             for activity in dicc_core[category]:
-                selectbox = create_selectbox(activity['core_activity'])
-    
-    st.markdown(
-        """<style>           
-
-        .element-container button {
-            color: black;
-            width: 100%; /* Ancho fijo para todos los botones */
-            text-align: center;
-            display: inline-block;
-            
-            border-radius: 4px;
-        }
-
-        </style>""",
-        unsafe_allow_html=True,
-    )
-    if selectbox:
-        st.success(f'Updated label successfully.')
-        #edited_df['Change'] = False
-        st.empty()
-    if boton:
-        st.success(f'Updated label successfully.')
-        #edited_df['Change'] = False
-        st.empty()
-
+                core_act = activity['core_activity']
+                st.selectbox(core_act, key=core_act, options = [''] + dicc_subact[core_act], on_change=save_select, args=(core_act,))
+                change_color('select_box', core_act,'black', dicc_core_color[core_act])
 
 
 
 def changed_file():
-    # Delete all the items in Session state
-    #if st.session_state["source_file"]:
     if "df_original" in st.session_state:
         del st.session_state["df_original"]   
 
@@ -330,6 +315,39 @@ def reset_current_page():
     st.session_state["current_page"] = 1
 
 def automated_classification():
+    def run_auto_classify():    
+        select_class = st.session_state.auto_type
+        openai_key = st.session_state.openai_key
+        openai_org = st.session_state.openai_org
+        all = st.session_state.df_original 
+
+        if select_class=="Selected date":
+            a_datetime = st.session_state.a_datetime
+            next_day = st.session_state.next_day
+            filter_app = (all['Begin'] >= a_datetime) & (all['Begin'] < next_day)       
+            to_classify = all[filter_app]
+        
+        elif select_class == "Selected rows":
+            selected_rows = st.session_state.filas_seleccionadas
+            index = [x - 1 for x in selected_rows]
+            to_classify = all.iloc[index]
+            filter_app = all['ID'].isin(selected_rows)
+
+        else:
+            to_classify = all
+            filter_app = None
+
+        mensaje_container.write(f"Classifying with GPT {len(to_classify)} elements (it might take a while)...")
+        classification = clasificacion_core_act.classify(to_classify, openai_key, openai_org)
+        st.session_state.undo_df = all.copy()
+        if filter_app is not None:
+            all.loc[filter_app,'Activity'] = classification
+            all.loc[filter_app,'Subactivity'] = "Unspecified "+classification
+        else:
+            all['Activity'] = classification
+            all['Subactivity'] = "Unspecified "+classification  
+
+      
     with st.expander("Automated labeling"):
         with st.form(key='auto_labeling'):
             st.text_input("Set OpenAI key", type="password", key='openai_key')
@@ -338,37 +356,6 @@ def automated_classification():
         
             st.form_submit_button("Click to start classification", on_click=run_auto_classify) 
 
-def run_auto_classify():    
-    select_class = st.session_state.auto_type
-    openai_key = st.session_state.openai_key
-    openai_org = st.session_state.openai_org
-    all = st.session_state.df_original 
-
-    if select_class=="Selected date":
-        a_datetime = st.session_state.a_datetime
-        next_day = st.session_state.next_day
-        filter_app = (all['Begin'] >= a_datetime) & (all['Begin'] < next_day)       
-        to_classify = all[filter_app]
-    
-    elif select_class == "Selected rows":
-        selected_rows = st.session_state.filas_seleccionadas
-        index = [x - 1 for x in selected_rows]
-        to_classify = all.iloc[index]
-        filter_app = all['ID'].isin(selected_rows)
-
-    else:
-        to_classify = all
-        filter_app = None
-
-    mensaje_container.write(f"Classifying with GPT {len(to_classify)} elements (it might take a while)...")
-    classification = clasificacion_core_act.classify(to_classify, openai_key, openai_org)
-    st.session_state.undo_df = all.copy()
-    if filter_app is not None:
-        all.loc[filter_app,'Activity'] = classification
-        all.loc[filter_app,'Subactivity'] = "Unspecified "+classification
-    else:
-        all['Activity'] = classification
-        all['Subactivity'] = "Unspecified "+classification
 
 
 st.set_page_config(layout="wide")
@@ -388,6 +375,7 @@ if "df_original" not in st.session_state:
     st.session_state["next_day"] = None
     st.session_state["a_datetime"] = None
     st.session_state["undo_df"] = None
+    st.session_state["all_cases"] = set()
 
     if archivo_cargado is not None:
         mensaje_container.write("Loading...")
@@ -401,7 +389,11 @@ if "df_original" not in st.session_state:
         data_expanded['Begin Time'] =data_expanded['Begin'].dt.strftime('%H:%M:%S')
         data_expanded['Ending Time']= data_expanded['End'].dt.strftime('%H:%M:%S')
         data_expanded['Change'] = False
-        st.session_state.df_original = data_expanded[['Change','ID','Merged_titles','Begin','End','Begin Time','Ending Time', 'Duration', 'Activity', 'Subactivity']]
+        st.session_state.df_original = data_expanded[['Change','ID','Merged_titles','Begin','End','Begin Time','Ending Time', 'Duration', 'Activity', 'Subactivity', 'Case']]
+
+        print("before")
+        st.session_state.all_cases = set(data_expanded["Case"].dropna().unique())
+        print(st.session_state.all_cases)
         
 if "df_original" in st.session_state:
     select_date_col, select_colors_col = st.columns(2)
@@ -432,11 +424,16 @@ if "df_original" in st.session_state:
         st.error("There is no data for the selected date 😞. Why don't you try with another one? 😉")
     else:
         try:
+            
             page, batch_size, total_pages = paginate_df(selected_df)
             styled_page = apply_styles(page, toggle_block_colours, toggle_begin_end_colours)
-            selected_rows = display_events_table(styled_page, batch_size, total_pages, max_dur=selected_df["Duration"].max())
+            display_undo_button()
+            selected_rows = display_events_table(styled_page, batch_size, max_dur=selected_df["Duration"].max())
+            display_pagination_bottom(total_pages)
 
             with st.sidebar:
+                st.title("Classify cases")
+                cases_classification()
                 st.title("Classify activities")
                 automated_classification()
                 manual_classification_sidebar()
