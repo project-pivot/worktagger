@@ -26,23 +26,32 @@ def simple_load_file(loaded_file, default_classification="No work-related"):
     uploaded_file.seek(0)
 
     df = pd.read_csv(uploaded_file,sep=";")
-    if "Zero_shot_classification" in df.columns:
+
+    df['Begin'] = pd.to_datetime(df['Begin'], errors='coerce')
+    df['End'] = pd.to_datetime(df['End'], errors='coerce')
+
+    if "Activity" in df.columns:
         result = df
-    else:
+    elif "Zero_shot_classification" in df.columns:
+        df["Activity"] = df["Zero_shot_classification"]
+        result = df
+    else: # Tockler import
         df['Merged_titles'] = df['App'] +" - "+ df["Title"]
         #Adds a new column that specifies whether the type of recording is work or computer break.
         df['Type'] = "Computer work"
         # Set 'Type' to 'NATIVE - NO_TITLE' where 'Title' is 'NATIVE - NO_TITLE'
         df['Type'] = np.where(df['Title'].str.contains('NO_TITLE'), 'NO_TITLE', df['Type'])
-        df['Begin'] = pd.to_datetime(df['Begin'], errors='coerce')
-        df['End'] = pd.to_datetime(df['End'], errors='coerce')
-        df['Duration'] = df['End'] - df['Begin']
-        df['Zero_shot_classification'] = "No work-related"
+        df['Activity'] = "No work-related"
 
         result = df[df['Type'] == 'Computer work'].copy()
 
+    if "Duration" not in result.columns:
+        result['Duration'] = (result['End'] - result['Begin'])/pd.Timedelta('1s')
+
     if "Subactivity" not in result.columns:
-        result["Subactivity"] = "Unspecified " + result['Zero_shot_classification']
+        result["Subactivity"] = "Unspecified " + result['Activity']
+
+    print(f"Load {result.columns}")
 
     return result
 

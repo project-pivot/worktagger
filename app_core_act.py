@@ -164,7 +164,7 @@ def apply_label_to_selection(core, subact):
     st.session_state.undo_df = df_original.copy()
 
     df_original.loc[df['ID'].isin(filas_seleccionadas), 'Subactivity'] = subact
-    df_original.loc[df['ID'].isin(filas_seleccionadas), 'Zero_shot_classification'] = core
+    df_original.loc[df['ID'].isin(filas_seleccionadas), 'Activity'] = core
 
 def update_last_3_buttons(core, subact):
     if not "last_acts" in st.session_state:
@@ -182,7 +182,7 @@ def to_csv(df):
     return output.getvalue().decode('utf-8')
 
 def download_csv(df):
-    excel_data = to_csv(df.drop(columns=['Change']))
+    excel_data = to_csv(df.drop(columns=['Change', 'Begin Time', 'Ending Time', 'ID']))
     st.download_button(
         label="Download CSV",
         data=excel_data,
@@ -191,7 +191,7 @@ def download_csv(df):
     )
 
 def asignar_color(s):
-    col = dicc_core_color[s.Zero_shot_classification]
+    col = dicc_core_color[s.Activity]
     return ['background-color:{}'.format(col)]*len(s)
     
 def resaltar_principio_fin_bloques(fila):
@@ -220,7 +220,7 @@ def resaltar_principio_fin_bloques(fila):
 def asignar_color_sin_estilos(s):
     return ['background-color:#FFFFFF'] * len(s)
 
-def display_events_table(df, batch_size, total_pages):
+def display_events_table(df, batch_size, total_pages, max_dur):
     st.button("Undo", disabled=(st.session_state.undo_df is None), on_click = going_back)
         
     column_config = {
@@ -229,17 +229,30 @@ def display_events_table(df, batch_size, total_pages):
             help="Choose the rows you want to apply the label",
             default=False,
         ),
+        # "Begin": st.column_config.DatetimeColumn(
+        #     label="Begining",
+        #     format="D MMM YYYY, h:mm a",
+        #     min_value=dt.datetime(2023, 6, 1),
+        #     max_value=dt.datetime(2025, 1, 1)
+        # ),        
         "Begin": None,
         "End": None,
         "ID": None,
-        '': None
+        '': None,
+        "Merged_titles": "App and title",
+        "Duration": st.column_config.ProgressColumn(
+            label="Duration (seconds)",
+            format="%d",
+            max_value=max_dur
+        )
+
     }
 
     # Shows table
     edited_df = st.data_editor(
         df,
         column_config=column_config,
-        disabled=["ID", 'Merged_titles', 'Begin', 'End','Begin Time','Ending Time', 'App', 'Type', 'Duration', 'Most_occuring_title', 'Zero_shot_classification','Subactivity'],
+        disabled=["ID", 'Merged_titles', 'Begin', 'End','Begin Time','Ending Time', 'App', 'Type', 'Duration', 'Most_occuring_title', 'Activity','Subactivity'],
         hide_index=True,
         key="selector",
         use_container_width = True,
@@ -351,10 +364,10 @@ def run_auto_classify():
     classification = clasificacion_core_act.classify(to_classify, openai_key, openai_org)
     st.session_state.undo_df = all.copy()
     if filter_app is not None:
-        all.loc[filter_app,'Zero_shot_classification'] = classification
+        all.loc[filter_app,'Activity'] = classification
         all.loc[filter_app,'Subactivity'] = "Unspecified "+classification
     else:
-        all['Zero_shot_classification'] = classification
+        all['Activity'] = classification
         all['Subactivity'] = "Unspecified "+classification
 
 
@@ -364,8 +377,8 @@ dicc_core, dicc_subact, dicc_core_color = load_activities()
 all_sub = [f"{s} - {c}" for c in dicc_subact for s in dicc_subact[c]]
 
 # Upload file
-with st.expander("Click for upload"):
-    archivo_cargado = st.file_uploader("Upload a file", type=["csv"], key="source_file", on_change=changed_file)
+with st.expander("Upload your data"):
+    archivo_cargado = st.file_uploader("Upload your Tockler data here. You can export your data by going to Tockler > Search > Set a time period > Export to CSV.", type=["csv"], key="source_file", on_change=changed_file)
 
 mensaje_container = st.empty()
 
@@ -385,10 +398,10 @@ if "df_original" not in st.session_state:
         data_expanded = data_expanded.reset_index(drop=True)
         data_expanded['Begin'] = pd.to_datetime(data_expanded['Begin'], format='%d/%m/%Y %H:%M')        
         data_expanded['End'] = pd.to_datetime(data_expanded['End'], format='%d/%m/%Y %H:%M')
-        data_expanded['Begin Time'] =data_expanded['Begin'].dt.strftime('%H:%M')
-        data_expanded['Ending Time']= data_expanded['End'].dt.strftime('%H:%M')
+        data_expanded['Begin Time'] =data_expanded['Begin'].dt.strftime('%H:%M:%S')
+        data_expanded['Ending Time']= data_expanded['End'].dt.strftime('%H:%M:%S')
         data_expanded['Change'] = False
-        st.session_state.df_original = data_expanded[['Change','ID','Merged_titles','Begin','End','Begin Time','Ending Time', 'Zero_shot_classification', 'Subactivity']]
+        st.session_state.df_original = data_expanded[['Change','ID','Merged_titles','Begin','End','Begin Time','Ending Time', 'Duration', 'Activity', 'Subactivity']]
         
 if "df_original" in st.session_state:
     select_date_col, select_colors_col = st.columns(2)
@@ -421,14 +434,14 @@ if "df_original" in st.session_state:
         try:
             page, batch_size, total_pages = paginate_df(selected_df)
             styled_page = apply_styles(page, toggle_block_colours, toggle_begin_end_colours)
-            selected_rows = display_events_table(styled_page, batch_size, total_pages)
+            selected_rows = display_events_table(styled_page, batch_size, total_pages, max_dur=selected_df["Duration"].max())
 
             with st.sidebar:
                 st.title("Classify activities")
                 automated_classification()
                 manual_classification_sidebar()
 
-            download_csv(df)
+            download_csv(st.session_state.df_original)
         except Exception as e: 
             print(f"There was an error: {e}")
             st.error("There was an error processing the request. Try again")
