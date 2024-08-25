@@ -14,6 +14,13 @@ import math
 def load_activities():
     return activities_loader.load_activities()
 
+@st.cache_resource
+def load_view_options():
+    return {
+        "Time view": load_time_view(),
+        "Active window view": load_active_window_view(),
+        "Activity view": load_activity_view()
+    }
 
 def change_color(element_type, widget_label, font_color, background_color='transparent'):
     if element_type == 'select_box':
@@ -112,10 +119,18 @@ def download_csv(df):
     )
 
 def asignar_color(s):
-    if s.Activity in dicc_core_color:
-        col = dicc_core_color[s.Activity]
+    col = '#FFFFFF'
+    if isinstance(s.Activity, list):
+        if len(s.Activity) == 1:
+            activity = s.Activity[0]
+        else:
+            activity = None
     else:
-        col = '#FFFFFF'
+        activity = s.Activity
+
+    if activity in dicc_core_color:
+        col = dicc_core_color[activity]
+    
     return [f'background-color:{col}']*len(s)
     
 def resaltar_principio_fin_bloques(fila):
@@ -378,7 +393,6 @@ def load_time_view():
         return column_config, column_order
 
     def time_view_options(df):
-        print(df.loc[df['Begin'].isna(), ["Begin", "End", "Merged_titles"]])
         date_column, time_column = st.columns(2)
         with date_column:        
             min_date = df['Begin'].dt.date.min()
@@ -439,7 +453,10 @@ def load_active_window_view():
                 label="Duration (seconds)",
                 format="%d",
                 max_value=max_dur
-            )
+            ),
+            "Activity": "Activities",
+            "Subactivity": "Subactivities",
+            "Case": "Cases"
         }
 
         column_order = ["Change", "Merged_titles", "ID", "Duration", "Activity", "Subactivity", "Case"]
@@ -465,7 +482,7 @@ def load_active_window_view():
             else:
                 sort = 'Duration'
 
-        selected_df = selected_df.groupby("Merged_titles").agg({"ID": "count", "Duration": "sum", "Activity": lambda x: '||'.join(set(x)), "Subactivity":lambda x: '||'.join(set(x)), "Case": lambda x: '||'.join(set([str(j) for j in x]))}).sort_values(sort, ascending=False).reset_index()
+        selected_df = selected_df.groupby("Merged_titles").agg({"ID": "count", "Duration": "sum", "Activity": lambda x: list(set(x)), "Subactivity":lambda x: list(set(x)), "Case": lambda x: list(set([str(j) for j in x]))}).sort_values(sort, ascending=False).reset_index()
         selected_df["Change"] = False
         selected_df.loc[selected_df["Case"]=='nan', "Case"] = None
         return selected_df
@@ -500,7 +517,8 @@ def load_activity_view():
                 label="Duration (seconds)",
                 format="%d",
                 max_value=max_dur
-            )
+            ), 
+            "Case": "Cases"
         }
 
         column_order = ["Change", "Activity", "Subactivity", "Begin", "End", "ID", "Duration",  "Case"]
@@ -532,7 +550,7 @@ def load_activity_view():
                 ascending = True
 
         changes = ((selected_df['Subactivity'] != selected_df['Subactivity'].shift())) | (selected_df['Begin'].dt.date != selected_df['Begin'].dt.date.shift())
-        selected_df = selected_df.groupby(changes.cumsum()).agg({"ID": "count", "Begin": "first", "End": "last", "Duration": "sum", "Activity": lambda x: '||'.join(set(x)), "Subactivity":lambda x: '||'.join(set(x)), "Case": lambda x: '||'.join(set([str(j) for j in x])) }).sort_values(sort, ascending=ascending).reset_index(drop=True)
+        selected_df = selected_df.groupby(changes.cumsum()).agg({"ID": "count", "Begin": "first", "End": "last", "Duration": "sum", "Activity": lambda x: '||'.join(set(x)), "Subactivity":lambda x: '||'.join(set(x)), "Case": lambda x: list(set([str(j) for j in x])) }).sort_values(sort, ascending=ascending).reset_index(drop=True)
         selected_df["Change"] = False
         selected_df.loc[selected_df["Case"]=='nan', "Case"] = None
         return selected_df
@@ -576,10 +594,10 @@ if "df_original" not in st.session_state:
 
     if archivo_cargado is not None or load_sample_data:
         mensaje_container.write("Loading...")
-        if archivo_cargado is not None:
-            data_expanded = clasificacion_core_act.simple_load_file(loaded_file=archivo_cargado)
-        elif load_sample_data:
+        if load_sample_data:
             data_expanded = clasificacion_core_act.simple_load_file(url_link="https://raw.githubusercontent.com/project-pivot/labelled-awt-data/main/data/awt_data_1_pseudonymized.csv", dayfirst=True)
+        elif archivo_cargado is not None:
+            data_expanded = clasificacion_core_act.simple_load_file(loaded_file=archivo_cargado)
         mensaje_container.write("File loaded")
 
         data_expanded['ID'] = range(1,len(data_expanded)+1)
@@ -594,11 +612,7 @@ if "df_original" not in st.session_state:
         st.session_state.all_cases = set(data_expanded["Case"].dropna().unique())
         
 if "df_original" in st.session_state:
-    view_options = {
-        "Time view": load_time_view(),
-        "Active window view": load_active_window_view(),
-        "Activity view": load_activity_view()
-    }
+    view_options = load_view_options()
     
     view_type = st.radio(label="Select view", options=view_options.keys(), format_func=lambda x: view_options[x]['label'], key='view_type', horizontal=True, on_change=reset_current_page)
     selected_view = view_options[view_type]
