@@ -54,6 +54,12 @@ def simple_load_file(loaded_file, default_classification="No work-related"):
     if "Case" not in result.columns:
         result["Case"] = None
 
+    if "App" not in result.columns:
+        splitted = df['Merged_titles'].str.split(' - ', n=1, expand=True)
+        result["App"] = splitted[0]
+
+    print (result.columns)
+
     return result
 
 

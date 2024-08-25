@@ -71,7 +71,6 @@ def paginate_df(dataset):
         st.markdown(f"Page **{st.session_state.current_page}** of **{total_pages}** ")
 
     pages = split_df(dataset,batch_size)
-
     page = pages[st.session_state.current_page-1]
 
     return page, batch_size, total_pages
@@ -93,12 +92,11 @@ def apply_label_to_selection(**kwargs):
         return
     
     df_original = st.session_state.df_original
-    filas_seleccionadas = st.session_state.filas_seleccionadas
 
     st.session_state.undo_df = df_original.copy()
 
     for key in kwargs:
-        df_original.loc[df['ID'].isin(filas_seleccionadas), key] = kwargs[key]
+        view_options[st.session_state.view_type]['save_func'](key, kwargs[key])
 
 
 def to_csv(df):
@@ -109,15 +107,19 @@ def to_csv(df):
 def download_csv(df):
     excel_data = to_csv(df.drop(columns=['Change', 'Begin Time', 'Ending Time', 'ID']))
     st.download_button(
-        label="Download CSV",
+        label="⬇️ Download CSV",
         data=excel_data,
         file_name='dataframe.csv',
-        mime='text/csv'
+        mime='text/csv',
+        use_container_width=True
     )
 
 def asignar_color(s):
-    col = dicc_core_color[s.Activity]
-    return ['background-color:{}'.format(col)]*len(s)
+    if s.Activity in dicc_core_color:
+        col = dicc_core_color[s.Activity]
+    else:
+        col = '#FFFFFF'
+    return [f'background-color:{col}']*len(s)
     
 def resaltar_principio_fin_bloques(fila):
     valor_actual_b = fila['Begin']
@@ -150,34 +152,21 @@ def display_undo_button():
         st.session_state.df_original = st.session_state.undo_df
         st.session_state.undo_df = None
 
-    st.button("Undo", disabled=(st.session_state.undo_df is None), on_click = undo_last_action)
+    st.button("↩️ Undo", disabled=(st.session_state.undo_df is None), on_click = undo_last_action, use_container_width=True)
 
+def display_select_all_button():
+    return st.button("✅ Select all in this page", use_container_width=True)
 
-def display_events_table(df, batch_size, max_dur):        
-    column_config = {
-        "Change": st.column_config.CheckboxColumn(
-            "Change",
-            help="Choose the rows you want to apply the label",
-            default=False,
-        ),
-        "Begin": None,
-        "End": None,
-        "ID": None,
-        '': None,
-        "Merged_titles": "App and title",
-        "Duration": st.column_config.ProgressColumn(
-            label="Duration (seconds)",
-            format="%d",
-            max_value=max_dur
-        )
+def display_events_table(df, batch_size, column_config, column_order=None):        
 
-    }
+    disabled = df.columns.difference(['Change'])
 
     # Shows table
     edited_df = st.data_editor(
         df,
         column_config=column_config,
-        disabled=["ID", 'Merged_titles', 'Begin', 'End','Begin Time','Ending Time', 'App', 'Type', 'Duration', 'Most_occuring_title', 'Activity','Subactivity', 'Case'],
+        column_order=column_order,
+        disabled=disabled,
         hide_index=True,
         key="selector",
         use_container_width = True,
@@ -185,7 +174,7 @@ def display_events_table(df, batch_size, max_dur):
     )
 
     # Filter rows that have been selected
-    filas_seleccionadas = edited_df[edited_df['Change']]['ID'].tolist()
+    filas_seleccionadas = edited_df[edited_df['Change']]
     st.session_state.filas_seleccionadas = filas_seleccionadas
 
     return filas_seleccionadas
@@ -328,7 +317,7 @@ def automated_classification():
             to_classify = all[filter_app]
         
         elif select_class == "Selected rows":
-            selected_rows = st.session_state.filas_seleccionadas
+            selected_rows = st.session_state.filas_seleccionadas['ID'].tolist()
             index = [x - 1 for x in selected_rows]
             to_classify = all.iloc[index]
             filter_app = all['ID'].isin(selected_rows)
@@ -352,11 +341,219 @@ def automated_classification():
         with st.form(key='auto_labeling'):
             st.text_input("Set OpenAI key", type="password", key='openai_key')
             st.text_input("Set OpenAI org", type="password", key='openai_org')
-            st.selectbox("Choose what data you want to classify", ["All", "Selected date", "Selected rows"], index=1, key='auto_type')
+
+            if view_options[st.session_state.view_type]['has_time_blocks']:
+                options = ["All", "Selected date", "Selected rows"]
+                index = 1
+            else:
+                options = ["All"]
+                index = 0
+
+            st.selectbox("Choose what data you want to classify", options, index=index, key='auto_type')
         
             st.form_submit_button("Click to start classification", on_click=run_auto_classify) 
 
 
+def load_time_view():
+
+    def time_view_config(max_dur):
+        column_config = {
+            "Change": st.column_config.CheckboxColumn(
+                "Change",
+                help="Choose the rows you want to apply the label",
+                default=False,
+            ),
+            "Begin": None,
+            "End": None,
+            "App": None,
+            "ID": None,
+            '': None,
+            "Merged_titles": "App and title",
+            "Duration": st.column_config.ProgressColumn(
+                label="Duration (seconds)",
+                format="%d",
+                max_value=max_dur
+            )
+        }
+
+        column_order = ["Change", "Merged_titles", "Begin Time", "Ending Time", "Duration", "Activity", "Subactivity", "Case"]
+
+        return column_config, column_order
+
+    def time_view_options(df):
+        date_column, time_column = st.columns(2)
+        with date_column:        
+            min_date = df['Begin'].dt.date.min()
+            max_date=df['Begin'].dt.date.max()
+            a_date = st.date_input(f"Pick a date: From {min_date} to {max_date}", min_value=min_date, max_value=max_date, value=min_date, on_change=reset_current_page)
+        with time_column:
+            selected_time = st.time_input("Pick the day start time:", value=dt.time(6, 0))
+
+        filter_activity_col, window_size_col = st.columns(2)
+        with filter_activity_col:
+            filter_act = st.selectbox(label='Filter by activity:', options=['No filter'] + df['Activity'].unique().tolist())
+        with window_size_col:
+            window_size = st.slider(label='Select window size:', disabled=(filter_act == 'No filter'), min_value=0, max_value=15)
+
+        a_datetime = dt.datetime.combine(a_date, selected_time)
+        st.session_state.a_datetime = a_datetime
+
+        next_day = a_datetime + dt.timedelta(hours=24)
+        st.session_state.next_day = next_day
+
+        selected_df = df[(df['Begin'] >= a_datetime) & (df['Begin'] < next_day)]
+
+        if filter_act != 'No filter':
+            int_mask = (selected_df['Activity'] == filter_act).astype(int)
+            expanded_int_mask = int_mask.rolling(window=2*window_size+1, min_periods=1, center=True).sum()
+            expanded_mask = expanded_int_mask > 0
+            selected_df = selected_df[expanded_mask]        
+
+        return selected_df
+    
+    def time_view_save(key, value):
+        df_original = st.session_state.df_original
+        filas_seleccionadas = st.session_state.filas_seleccionadas['ID'].tolist()
+        df_original.loc[df_original['ID'].isin(filas_seleccionadas), key] = value
+
+    
+    return {
+        "label": "📅 Time view",
+        "options_func": time_view_options,
+        "config_func": time_view_config,
+        "save_func": time_view_save,
+        "has_time_blocks": True
+    }
+
+def load_active_window_view():
+
+    def active_window_view_config(max_dur):
+        column_config = {
+            "Change": st.column_config.CheckboxColumn(
+                "Change",
+                help="Choose the rows you want to apply the label",
+                default=False,
+                disabled=False
+            ),
+            "ID": "Count",
+            "Merged_titles": "App and title",
+            "Duration": st.column_config.ProgressColumn(
+                label="Duration (seconds)",
+                format="%d",
+                max_value=max_dur
+            )
+        }
+
+        column_order = ["Change", "Merged_titles", "ID", "Duration", "Activity", "Subactivity", "Case"]
+
+        return column_config, column_order
+
+    def active_window_view_options(df):
+        filter_column, sort_column = st.columns(2)
+        selected_df = df
+        with filter_column:
+            filter_app = st.selectbox(label='Filter by app:', options=['No filter'] + df['App'].unique().tolist())
+            if filter_app != 'No filter':
+                selected_df = selected_df[selected_df['App'] == filter_app]
+
+            title_app = st.text_input(label='Filter by window title:')
+            if title_app is not None and title_app != '':
+                selected_df = selected_df[selected_df['Merged_titles'].str.contains(title_app, case=False)]
+                
+        with sort_column:
+            sort_value = st.selectbox(label='Sort by:', options=['Count', 'Duration'])
+            if sort_value == 'Count':
+                sort = 'ID'
+            else:
+                sort = 'Duration'
+
+        selected_df = selected_df.groupby("Merged_titles").agg({"ID": "count", "Duration": "sum", "Activity": lambda x: '||'.join(set(x)), "Subactivity":lambda x: '||'.join(set(x)), "Case": lambda x: '||'.join(set([str(j) for j in x]))}).sort_values(sort, ascending=False).reset_index()
+        selected_df["Change"] = False
+        selected_df.loc[selected_df["Case"]=='nan', "Case"] = None
+        return selected_df
+
+    def active_window_view_save(key, value):
+        df_original = st.session_state.df_original
+        titles_selected = st.session_state.filas_seleccionadas['Merged_titles'].tolist()
+        df_original.loc[df_original['Merged_titles'].isin(titles_selected), key] = value
+
+    
+    return {
+        "label": "🖥️ Active window view",
+        "options_func": active_window_view_options,
+        "config_func": active_window_view_config,
+        "save_func": active_window_view_save,
+        "has_time_blocks": False
+    }
+
+
+def load_activity_view():
+
+    def activity_view_config(max_dur):
+        column_config = {
+            "Change": st.column_config.CheckboxColumn(
+                "Change",
+                help="Choose the rows you want to apply the label",
+                default=False,
+                disabled=False
+            ),
+            "ID": "Windows",
+            "Duration": st.column_config.ProgressColumn(
+                label="Duration (seconds)",
+                format="%d",
+                max_value=max_dur
+            )
+        }
+
+        column_order = ["Change", "Activity", "Subactivity", "Begin", "End", "ID", "Duration",  "Case"]
+
+        return column_config, column_order
+
+    def activity_view_options(df):
+        filter_column, sort_column = st.columns(2)
+        selected_df = df
+        with filter_column:
+            filter_app = st.selectbox(label='Filter by activity:', options=['No filter'] + df['Activity'].unique().tolist())
+            if filter_app != 'No filter':
+                selected_df = selected_df[selected_df['Activity'] == filter_app]
+
+            # title_app = st.text_input(label='Filter by title:')
+            # if title_app is not None and title_app != '':
+            #     selected_df = selected_df[selected_df['Merged_titles'].str.contains(title_app, case=False)]
+                
+        with sort_column:
+            sort_value = st.selectbox(label='Sort by:', options=['Date', 'Count', 'Duration'])
+            if sort_value == 'Count':
+                sort = 'ID'
+                ascending = False
+            elif sort_value == 'Duration':
+                sort = 'Duration'
+                ascending = False
+            else:
+                sort = 'Begin'
+                ascending = True
+
+        changes = ((selected_df['Subactivity'] != selected_df['Subactivity'].shift())) | (selected_df['Begin'].dt.date != selected_df['Begin'].dt.date.shift())
+        selected_df = selected_df.groupby(changes.cumsum()).agg({"ID": "count", "Begin": "first", "End": "last", "Duration": "sum", "Activity": lambda x: '||'.join(set(x)), "Subactivity":lambda x: '||'.join(set(x)), "Case": lambda x: '||'.join(set([str(j) for j in x])) }).sort_values(sort, ascending=ascending).reset_index(drop=True)
+        selected_df["Change"] = False
+        selected_df.loc[selected_df["Case"]=='nan', "Case"] = None
+        return selected_df
+
+    def activity_view_save(key, value):
+        df_original = st.session_state.df_original
+        rows = st.session_state.filas_seleccionadas.rename(columns={'Begin': 'Begin_int'})
+        result = pd.merge_asof(df_original, rows, left_on='Begin', right_on='Begin_int', by='Subactivity')
+        mask = (~(result['Begin_int'].isna())) & (result['Begin'] >= result['Begin_int']) & (result['End_x'] <= result['End_y'])
+        df_original.loc[mask, key] = value
+
+    
+    return {
+        "label": "👩‍💻 Activity view",
+        "options_func": activity_view_options,
+        "config_func": activity_view_config,
+        "save_func": activity_view_save,
+        "has_time_blocks": False
+    }
 
 st.set_page_config(layout="wide")
 
@@ -384,61 +581,69 @@ if "df_original" not in st.session_state:
 
         data_expanded['ID'] = range(1,len(data_expanded)+1)
         data_expanded = data_expanded.reset_index(drop=True)
-        data_expanded['Begin'] = pd.to_datetime(data_expanded['Begin'], format='%d/%m/%Y %H:%M')        
-        data_expanded['End'] = pd.to_datetime(data_expanded['End'], format='%d/%m/%Y %H:%M')
+        data_expanded['Begin'] = pd.to_datetime(data_expanded['Begin'], format='%d/%m/%Y %H:%M:%S')        
+        data_expanded['End'] = pd.to_datetime(data_expanded['End'], format='%d/%m/%Y %H:%M:%S')
         data_expanded['Begin Time'] =data_expanded['Begin'].dt.strftime('%H:%M:%S')
         data_expanded['Ending Time']= data_expanded['End'].dt.strftime('%H:%M:%S')
         data_expanded['Change'] = False
-        st.session_state.df_original = data_expanded[['Change','ID','Merged_titles','Begin','End','Begin Time','Ending Time', 'Duration', 'Activity', 'Subactivity', 'Case']]
+        st.session_state.df_original = data_expanded[['Change','ID','Merged_titles','Begin','End','Begin Time','Ending Time', 'Duration', 'Activity', 'Subactivity', 'Case', 'App']]
 
-        print("before")
         st.session_state.all_cases = set(data_expanded["Case"].dropna().unique())
-        print(st.session_state.all_cases)
         
 if "df_original" in st.session_state:
-    select_date_col, select_colors_col = st.columns(2)
-    with select_colors_col:     
-        toggle_block_colours = st.toggle('Blocks colours', value=True)
-        toggle_begin_end_colours = st.toggle('Begin-End colours')
-        max_time_between_activities = st.slider("Maximum time between activities (minutes)", min_value=0, max_value=30, value=5)
+    view_options = {
+        "Time view": load_time_view(),
+        "Active window view": load_active_window_view(),
+        "Activity view": load_activity_view()
+    }
     
-    with select_date_col:
-        df = st.session_state.df_original
-        min_date = df['Begin'].dt.date.min()
-        max_date=df['Begin'].dt.date.max()
-        st.write(f"Date range: From {min_date} to {max_date}")
-        
-        a_date = st.date_input("Pick a date", min_value=min_date, max_value=max_date, value=min_date, on_change=reset_current_page)
-        selected_time = st.time_input("Pick a time", value=dt.time(6, 0))
+    view_type = st.radio(label="Select view", options=view_options.keys(), format_func=lambda x: view_options[x]['label'], key='view_type', horizontal=True, on_change=reset_current_page)
+    selected_view = view_options[view_type]
 
-        a_datetime = dt.datetime.combine(a_date, selected_time)
-        st.session_state.a_datetime = a_datetime
+    selected_df = selected_view['options_func'](st.session_state.df_original)
 
-        next_day = a_datetime + dt.timedelta(hours=24)
-        st.session_state.next_day = next_day
+    blocks_column, begin_column = st.columns(2)
+    with blocks_column:
+        toggle_block_colours = st.toggle('Blocks colours', value=True)
+    with begin_column:
+        if selected_view["has_time_blocks"]:
+            toggle_begin_end_colours = st.toggle('Begin-End colours')
+            if toggle_begin_end_colours:
+                max_time_between_activities = st.slider("Maximum time between activities (minutes)", min_value=0, max_value=30, value=5)
+        else:
+            toggle_begin_end_colours = False
 
-
-    selected_df = df[(df['Begin'] >= a_datetime) & (df['Begin'] < next_day)]
     
     if len(selected_df) == 0:
         st.error("There is no data for the selected date 😞. Why don't you try with another one? 😉")
     else:
         try:
             
+            button_column = st.columns(3)
+            with button_column[0]:
+                display_undo_button()
+            with button_column[1]:
+                select_all = display_select_all_button()
+            with button_column[2]:
+                download_csv(st.session_state.df_original)
+
             page, batch_size, total_pages = paginate_df(selected_df)
+            if select_all:
+                page["Change"] = True
+
+            column_config, column_order = selected_view['config_func'](max_dur=selected_df["Duration"].max())
+
             styled_page = apply_styles(page, toggle_block_colours, toggle_begin_end_colours)
-            display_undo_button()
-            selected_rows = display_events_table(styled_page, batch_size, max_dur=selected_df["Duration"].max())
+            selected_rows = display_events_table(styled_page, batch_size, column_config, column_order)
             display_pagination_bottom(total_pages)
 
             with st.sidebar:
-                st.title("Classify cases")
+                st.title("Label cases")
                 cases_classification()
-                st.title("Classify activities")
+                st.title("Label activities")
                 automated_classification()
                 manual_classification_sidebar()
 
-            download_csv(st.session_state.df_original)
         except Exception as e: 
             print(f"There was an error: {e}")
             st.error("There was an error processing the request. Try again")
