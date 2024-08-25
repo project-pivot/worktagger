@@ -8,9 +8,6 @@ import clasificacion_core_act
 import core_act as activities_loader
 import io
 import math
-import warnings
-
-warnings.filterwarnings("ignore")
 
 
 @st.cache_data
@@ -381,6 +378,7 @@ def load_time_view():
         return column_config, column_order
 
     def time_view_options(df):
+        print(df.loc[df['Begin'].isna(), ["Begin", "End", "Merged_titles"]])
         date_column, time_column = st.columns(2)
         with date_column:        
             min_date = df['Begin'].dt.date.min()
@@ -557,12 +555,14 @@ def load_activity_view():
 
 st.set_page_config(layout="wide")
 
-dicc_core, dicc_subact, dicc_core_color = load_activities()
+dicc_core, dicc_subact, dicc_map_subact, dicc_core_color = load_activities()
 all_sub = [f"{s} - {c}" for c in dicc_subact for s in dicc_subact[c]]
 
 # Upload file
 with st.expander("Upload your data"):
     archivo_cargado = st.file_uploader("Upload your Tockler data here. You can export your data by going to Tockler > Search > Set a time period > Export to CSV.", type=["csv"], key="source_file", on_change=changed_file)
+    st.write("Alternatively, you can load sample data from https://github.com/project-pivot/labelled-awt-data/")
+    load_sample_data = st.button("Load sample data", type="primary", on_click=changed_file)
 
 mensaje_container = st.empty()
 
@@ -574,9 +574,12 @@ if "df_original" not in st.session_state:
     st.session_state["undo_df"] = None
     st.session_state["all_cases"] = set()
 
-    if archivo_cargado is not None:
+    if archivo_cargado is not None or load_sample_data:
         mensaje_container.write("Loading...")
-        data_expanded = clasificacion_core_act.simple_load_file(archivo_cargado)
+        if archivo_cargado is not None:
+            data_expanded = clasificacion_core_act.simple_load_file(loaded_file=archivo_cargado)
+        elif load_sample_data:
+            data_expanded = clasificacion_core_act.simple_load_file(url_link="https://raw.githubusercontent.com/project-pivot/labelled-awt-data/main/data/awt_data_1_pseudonymized.csv", dayfirst=True)
         mensaje_container.write("File loaded")
 
         data_expanded['ID'] = range(1,len(data_expanded)+1)

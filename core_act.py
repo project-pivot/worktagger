@@ -17,12 +17,14 @@ def create_dicc_color(dicc):
 #Returns a dictionary where the key is the name of the core activity and the value is the list of corresponding subactivities
 def create_dicc_subactivities(dicc):
     new_dicc_core = {}
+    new_dicc_sub = {}
     for key in dicc:
         for aux_dicc in dicc[key]:
             core_activity = aux_dicc['core_activity']
             subactivities = aux_dicc['activities']
             new_dicc_core[core_activity] = subactivities
-    return new_dicc_core
+            new_dicc_sub = dict(new_dicc_sub, **{s: core_activity for s in subactivities})
+    return new_dicc_core, new_dicc_sub
 
 def load_activities():
     dicc_core = {
@@ -395,7 +397,7 @@ def load_activities():
     }
 
     add_unspecify(dicc_core)
-    dicc_subact = create_dicc_subactivities(dicc_core)
+    dicc_subact, dicc_map_subact = create_dicc_subactivities(dicc_core)
     dicc_core_color = create_dicc_color(dicc_core)
 
-    return dicc_core, dicc_subact, dicc_core_color
+    return dicc_core, dicc_subact, dicc_map_subact, dicc_core_color

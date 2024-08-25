@@ -10,9 +10,8 @@ from skllm.datasets import get_multilabel_classification_dataset
 from skllm.preprocessing import GPTSummarizer
 import streamlit as st
 import io
-import warnings
 
-warnings.filterwarnings("ignore")
+from core_act import load_activities
 
 # clave = st.session_state.openai_key
 # organizacion = st.session_state.openai_org
@@ -21,29 +20,42 @@ warnings.filterwarnings("ignore")
 # SKLLMConfig.set_openai_org(organizacion)
 
 
-def simple_load_file(loaded_file, default_classification="No work-related"):
-    uploaded_file = io.BytesIO(loaded_file.read())
-    uploaded_file.seek(0)
+def simple_load_file(loaded_file=None, url_link=None, default_classification="No work-related", dayfirst=False):
+    if loaded_file is not None:
+        uploaded_file = io.BytesIO(loaded_file.read())
+        uploaded_file.seek(0)
+    else:
+        uploaded_file = url_link
 
     df = pd.read_csv(uploaded_file,sep=";")
 
-    df['Begin'] = pd.to_datetime(df['Begin'], errors='coerce')
-    df['End'] = pd.to_datetime(df['End'], errors='coerce')
+    df['Begin'] = pd.to_datetime(df['Begin'], dayfirst=dayfirst, errors='coerce')
+    df['End'] = pd.to_datetime(df['End'], dayfirst=dayfirst, errors='coerce')
+
+    df = df.dropna(subset=['Begin', 'End'])
 
     if "Activity" in df.columns:
-        result = df
+        if "Subactivity" in df.columns:
+            result = df
+        else:
+            dicc_core, dicc_subact, dicc_map_subact, dicc_core_color = load_activities()            
+            df["Subactivity"] = df["Activity"]
+            df["Activity"] = df["Subactivity"].map(dicc_map_subact)
+            result = df
     elif "Zero_shot_classification" in df.columns:
         df["Activity"] = df["Zero_shot_classification"]
         result = df
     else: # Tockler import
-        df['Merged_titles'] = df['App'] +" - "+ df["Title"]
         #Adds a new column that specifies whether the type of recording is work or computer break.
         df['Type'] = "Computer work"
         # Set 'Type' to 'NATIVE - NO_TITLE' where 'Title' is 'NATIVE - NO_TITLE'
         df['Type'] = np.where(df['Title'].str.contains('NO_TITLE'), 'NO_TITLE', df['Type'])
-        df['Activity'] = "No work-related"
+        df['Activity'] = default_classification
 
         result = df[df['Type'] == 'Computer work'].copy()
+
+    if "Merged_titles" not in result.columns:
+        result['Merged_titles'] = df['App'] +" - "+ df["Title"]
 
     if "Duration" not in result.columns:
         result['Duration'] = (result['End'] - result['Begin'])/pd.Timedelta('1s')
