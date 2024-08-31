@@ -1,9 +1,13 @@
+<div align="center">
+  
 # Work Tagger
 ### A Labelling Companion
 
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/f6f9b4f5-dd50-4baa-8a80-dd6165702efe" alt="work_tagger" width="400" style="padding: 10px; border: 1px solid #ddd; border-radius: 8px;"/>
+<img src="https://github.com/user-attachments/assets/f6f9b4f5-dd50-4baa-8a80-dd6165702efe" alt="work_tagger" width="400" style="border: 1px solid #ddd; padding: 4px;"/>
+
+[![Visit Work Tagger](https://img.shields.io/badge/Visit-Work%20Tagger-blue?style=flat)](https://worktagger.streamlit.app/)
 </div>
+
 
 Work Tagger is a web-based tool that facilitates the classification of AWT data. Work Tagger has been developed using Streamlit, which is an open-source Python framework to create interactive web-applications, whose main characteristic is that it integrates the development of both a web-based frontend and backend into a single Python code base.
 
