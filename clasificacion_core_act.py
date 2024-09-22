@@ -1,3 +1,4 @@
+import logging
 import pandas as pd
 import numpy as np
 
@@ -70,7 +71,7 @@ def simple_load_file(loaded_file=None, url_link=None, default_classification="No
         splitted = df['Merged_titles'].str.split(' - ', n=1, expand=True)
         result["App"] = splitted[0]
 
-    print (result.columns)
+    logging.info(result.columns)
 
     return result
 

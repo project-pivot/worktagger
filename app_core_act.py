@@ -1,20 +1,27 @@
-import streamlit as st
-import pandas as pd
-import streamlit as st
-import pandas as pd
-import streamlit.components.v1 as components
 import datetime as dt
-import clasificacion_core_act
-import core_act as activities_loader
 import io
+import logging
 import math
 
+import pandas as pd
+import streamlit as st
+import streamlit.components.v1 as components
+
+import clasificacion_core_act
+import core_act as activities_loader
+
+# Configure logging
+logging.basicConfig(
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    level=logging.INFO, # Set the logging level
+    handlers=[logging.StreamHandler()] # Ensures output to Streamlit's terminal
+)
 
 @st.cache_data
 def load_activities():
     return activities_loader.load_activities()
 
-@st.cache_resource
+# @st.cache_resource
 def load_view_options():
     return {
         "Time view": load_time_view(),
@@ -44,9 +51,11 @@ def change_color(element_type, widget_label, font_color, background_color='trans
     components.html(f"{htmlstr}", height=1, width=1)
 
 
-def split_df(input_df, batch_size):
-    df = [input_df.loc[i:i+batch_size-1,:] for i in range(input_df.index.min(),input_df.index.min()+len(input_df), batch_size)]
-    return df
+def split_df(input_df, batch_size, current_page):
+    start_idx = (current_page - 1) * batch_size
+    end_idx = start_idx + batch_size
+
+    return input_df.iloc[start_idx:end_idx]
 
 
 def paginate_df(dataset):
@@ -74,12 +83,40 @@ def paginate_df(dataset):
     with pagination_menu[0]:
         st.markdown(f"Page **{st.session_state.current_page}** of **{total_pages}** ")
 
-    pages = split_df(dataset,batch_size)
-    page = pages[st.session_state.current_page-1]
+    page = split_df(dataset, batch_size, st.session_state.current_page)
 
     return page, batch_size, total_pages
 
-def apply_styles(page, toggle_block_colours, toggle_begin_end_colours):
+def apply_styles(page, format_table):
+
+    toggle_block_colours = format_table['toggle_block_colours']
+    toggle_begin_end_colours = format_table['toggle_begin_end_colours']
+    max_time_between_activities = format_table['max_time_between_activities']
+
+
+    def resaltar_principio_fin_bloques(fila):
+        valor_actual_b = fila['Begin']
+        valor_actual_e = fila['End']
+        valor_actual_e = pd.to_datetime(valor_actual_e, format='%d/%m/%Y %H:%M')
+        fila_sig = st.session_state.df_original.iloc[fila.name + 1] if fila.name + 1 < len(st.session_state.df_original) else None
+        fila_ant = st.session_state.df_original.iloc[fila.name - 1] if fila.name - 1 >= 0 else None
+        if fila_ant is not None:    
+            fila_ant['End'] = pd.to_datetime(fila_ant['End'], format='%d/%m/%Y %H:%M')
+        
+        dif_tiempo_ant = (valor_actual_b-fila_ant['End']).total_seconds()/60 if fila_ant is not None else 0
+
+        dif_tiempo_sig = (fila_sig['Begin']-valor_actual_e).total_seconds()/60 if fila_sig is not None else 0
+
+        ls_estilos = asignar_color(fila)
+        if fila_sig is None or dif_tiempo_sig>max_time_between_activities :
+
+            ls_estilos[6] = 'background-color:#808080' 
+        if fila_ant is None or dif_tiempo_ant>max_time_between_activities or fila.name==0 :
+
+            ls_estilos[5] = 'background-color:#808080'
+        return ls_estilos  
+
+
     if toggle_block_colours and not toggle_begin_end_colours:
         result = page.style.apply(asignar_color,axis=1)
     elif toggle_begin_end_colours:
@@ -133,27 +170,6 @@ def asignar_color(s):
     
     return [f'background-color:{col}']*len(s)
     
-def resaltar_principio_fin_bloques(fila):
-    valor_actual_b = fila['Begin']
-    valor_actual_e = fila['End']
-    valor_actual_e = pd.to_datetime(valor_actual_e, format='%d/%m/%Y %H:%M')
-    fila_sig = st.session_state.df_original.iloc[fila.name + 1] if fila.name + 1 < len(st.session_state.df_original) else None
-    fila_ant = st.session_state.df_original.iloc[fila.name - 1] if fila.name - 1 >= 0 else None
-    if fila_ant is not None:    
-        fila_ant['End'] = pd.to_datetime(fila_ant['End'], format='%d/%m/%Y %H:%M')
-    
-    dif_tiempo_ant = (valor_actual_b-fila_ant['End']).total_seconds()/60 if fila_ant is not None else 0
-
-    dif_tiempo_sig = (fila_sig['Begin']-valor_actual_e).total_seconds()/60 if fila_sig is not None else 0
-
-    ls_estilos = asignar_color(fila)
-    if fila_sig is None or dif_tiempo_sig>max_time_between_activities :
-
-        ls_estilos[6] = 'background-color:#808080' 
-    if fila_ant is None or dif_tiempo_ant>max_time_between_activities or fila.name==0 :
-
-        ls_estilos[5] = 'background-color:#808080'
-    return ls_estilos  
 
 
 def asignar_color_sin_estilos(s):
@@ -169,13 +185,30 @@ def display_undo_button():
 def display_select_all_button():
     return st.button("✅ Select all in this page", use_container_width=True)
 
-def display_events_table(df, batch_size, column_config, column_order=None):        
+@st.fragment
+def display_events_table(df, format_table, batch_size, column_config, column_order=None):        
+    select_actions_col = st.columns(3)
+    with select_actions_col[0]:
+        select_all = st.button("✅ Select all in this page", use_container_width=True)
+        if select_all:
+            df.loc[:,"Change"] = True
+    with select_actions_col[1]:
+        select_none = st.button("🚫 Select none in this page", use_container_width=True)
+        if select_none:
+            df.loc[:,"Change"] = False
+    with select_actions_col[2]:
+        select_invert = st.button("🔄 Invert selection", use_container_width=True)
+        if select_invert:
+            df.loc[:,"Change"] = ~(df["ID"].isin(st.session_state.filas_seleccionadas["ID"]))
+
+
+    styled_df = apply_styles(df, format_table)
 
     disabled = df.columns.difference(['Change'])
 
     # Shows table
     edited_df = st.data_editor(
-        df,
+        styled_df,
         column_config=column_config,
         column_order=column_order,
         disabled=disabled,
@@ -184,6 +217,7 @@ def display_events_table(df, batch_size, column_config, column_order=None):
         use_container_width = True,
         height= int(35.2*(batch_size+1))
     )
+
 
     # Filter rows that have been selected
     filas_seleccionadas = edited_df[edited_df['Change']]
@@ -208,7 +242,7 @@ def cases_classification():
         try:
             apply_label_to_selection(Case=case_name)
         except Exception as e:
-            print(f"There was an error saving button {case_name}: {e}")
+            logging.exception(f"There was an error saving button {case_name}", exc_info=e)
             st.error("Error saving")
 
     def add_new_case():
@@ -218,7 +252,7 @@ def cases_classification():
                 apply_label_to_selection(Case=case_name)
                 st.session_state.all_cases.add(case_name)
             except Exception as e:
-                print(f"There was an error saving button {case_name}: {e}")
+                logging.exception(f"There was an error saving button {case_name}", exc_info=e)
                 st.error("Error saving")
 
     with st.form(key='new_cases', clear_on_submit=True, border=False):
@@ -254,7 +288,7 @@ def manual_classification_sidebar():
         try:
             apply_label_to_selection(Activity=core_act, Subactivity=sub_act)
         except Exception as e:
-            print(f"There was an error saving button {core_act}, {sub_act}: {e}")
+            logging.exception(f"There was an error saving button {core_act}, {sub_act}", exc_info=e)
             st.error("Error saving")
 
 
@@ -269,10 +303,10 @@ def manual_classification_sidebar():
 
                 apply_label_to_selection(Activity=seleccion_core_act, Subactivity=seleccion_subact)
                 update_last_3_buttons(seleccion_core_act, seleccion_subact)
-                st.session_state.all_select = ""
+                st.session_state.all_select = None
 
         except Exception as e:
-            print(f"There was an error saving all_select: {e}")
+            logging.exception(f"There was an error saving all_select", exc_info=e)
             st.error("Error saving")
 
     def save_select(core):
@@ -280,9 +314,9 @@ def manual_classification_sidebar():
             subact = st.session_state[core]
             apply_label_to_selection(Activity=core, Subactivity=subact)
             update_last_3_buttons(core, subact)
-            st.session_state[core] = ""
+            st.session_state[core] = None
         except Exception as e:
-            print(f"There was an error saving select {core}: {e}")
+            logging.exception(f"There was an error saving select {core}", exc_info=e)
             st.error("Error saving")    
 
     if len(st.session_state.last_acts) > 0:
@@ -291,19 +325,19 @@ def manual_classification_sidebar():
             ll = [x for x in st.session_state.last_acts if x != ""]            
             subacts = []
             for activity in ll:
-                if not activity['subact'] in subacts:
+                if activity['subact'] is not None and activity['subact'] not in subacts:
                     subacts.append(activity['subact'])
                     st.button(activity['subact'], key=f'boton_{activity["subact"]}', on_click=save_button, args=(activity['core_act'], activity['subact']), use_container_width=True)
                     change_color('button', activity['subact'], 'black', dicc_core_color[activity['core_act']])
 
-    st.selectbox("Search all subactivities", key="all_select", options = [''] + all_sub, on_change=save_all_select)
+    st.selectbox("Search all subactivities", key="all_select", options = all_sub, index=None, placeholder="Search all subactivities", label_visibility='collapsed', on_change=save_all_select)
 
     for category in dicc_core.keys():
         with st.container():
             st.markdown(f"### {category}")
             for activity in dicc_core[category]:
                 core_act = activity['core_activity']
-                st.selectbox(core_act, key=core_act, options = [''] + dicc_subact[core_act], on_change=save_select, args=(core_act,))
+                st.selectbox(core_act, key=core_act, options = dicc_subact[core_act], index=None, placeholder=core_act, label_visibility='collapsed', on_change=save_select, args=(core_act,))
                 change_color('select_box', core_act,'black', dicc_core_color[core_act])
 
 
@@ -375,8 +409,8 @@ def load_time_view():
                 help="Choose the rows you want to apply the label",
                 default=False,
             ),
-            "Begin": None,
-            "End": None,
+            "Begin Time": None,
+            "End Time": None,
             "App": None,
             "ID": None,
             '': None,
@@ -388,7 +422,7 @@ def load_time_view():
             )
         }
 
-        column_order = ["Change", "Merged_titles", "Begin Time", "Ending Time", "Duration", "Activity", "Subactivity", "Case"]
+        column_order = ["Change", "Merged_titles", "Begin", "End", "Duration", "Activity", "Subactivity", "Case"]
 
         return column_config, column_order
 
@@ -397,26 +431,33 @@ def load_time_view():
         with date_column:        
             min_date = df['Begin'].dt.date.min()
             max_date=df['Begin'].dt.date.max()
-            a_date = st.date_input(f"Pick a date: From {min_date} to {max_date}", min_value=min_date, max_value=max_date, value=min_date, on_change=reset_current_page)
+            a_date = st.date_input(f"Pick a date: From {min_date} to {max_date}", min_value=min_date, max_value=max_date, value=(min_date, min_date), on_change=reset_current_page)
         with time_column:
             selected_time = st.time_input("Pick the day start time:", value=dt.time(6, 0))
 
         filter_activity_col, window_size_col = st.columns(2)
         with filter_activity_col:
             filter_act = st.selectbox(label='Filter by activity:', options=['No filter'] + df['Activity'].unique().tolist())
+            filter_case = st.selectbox(label='Filter by case:', options=['No filter'] + df['Case'].unique().tolist())
         with window_size_col:
-            window_size = st.slider(label='Select window size:', disabled=(filter_act == 'No filter'), min_value=0, max_value=15)
+            window_size = st.slider(label='Select window size:', disabled=((filter_act == 'No filter') and (filter_case == 'No filter')), min_value=0, max_value=15)
 
-        a_datetime = dt.datetime.combine(a_date, selected_time)
-        st.session_state.a_datetime = a_datetime
+        a_combined = [dt.datetime.combine(x, selected_time) for x in a_date]
+        a_datetime = a_combined[0]
+        if len(a_combined) > 1:
+            next_day = a_combined[1] + dt.timedelta(hours=24)
+        else:
+            next_day = a_combined[0] + dt.timedelta(hours=24)
 
-        next_day = a_datetime + dt.timedelta(hours=24)
+        st.session_state.a_datetime = a_datetime        
         st.session_state.next_day = next_day
 
         selected_df = df[(df['Begin'] >= a_datetime) & (df['Begin'] < next_day)]
 
-        if filter_act != 'No filter':
-            int_mask = (selected_df['Activity'] == filter_act).astype(int)
+        if filter_act != 'No filter' or filter_case != 'No filter':            
+            int_act_mask = (selected_df['Activity'] == filter_act).astype(int) if filter_act != 'No filter' else 0
+            int_case_mask = (selected_df['Case'] == filter_case).astype(int) if filter_case != 'No filter' else 0
+            int_mask = int_act_mask + int_case_mask
             expanded_int_mask = int_mask.rolling(window=2*window_size+1, min_periods=1, center=True).sum()
             expanded_mask = expanded_int_mask > 0
             selected_df = selected_df[expanded_mask]        
@@ -571,6 +612,67 @@ def load_activity_view():
         "has_time_blocks": False
     }
 
+@st.fragment
+def display_view(selected_view, selected_df, format_table):
+    if len(selected_df) == 0:
+        st.error("There is no data for the selected filters 😞. Why don't you try with another one? 😉")
+    else:
+        try:            
+            button_column = st.columns(3)
+            with button_column[0]:
+                display_undo_button()
+            with button_column[2]:
+                download_csv(st.session_state.df_original)
+
+            page, batch_size, total_pages = paginate_df(selected_df)
+
+            column_config, column_order = selected_view['config_func'](max_dur=selected_df["Duration"].max())
+
+            selected_rows = display_events_table(page, format_table, batch_size, column_config, column_order)
+            display_pagination_bottom(total_pages)
+        except Exception as e: 
+            logging.exception(f"There was an error while displaying the table", exc_info=e)
+            st.error("There was an error processing the request. Try again")
+
+def display_label_palette(selected_df):
+    if len(selected_df) == 0:
+        st.title("Label cases")
+        st.warning("No data to label")
+        st.title("Label activities")
+        st.warning("No data to label")
+
+    else:
+        try:
+            st.title("Label cases")
+            cases_classification()
+            st.title("Label activities")
+            automated_classification()
+            manual_classification_sidebar()
+        except Exception as e: 
+            logging.exception(f"There was an error while displaying the sidebar", exc_info=e)
+            st.error("There was an error processing the request. Try again")
+
+def display_table_formatter(selected_view):
+    blocks_column, begin_column = st.columns(2)
+    max_time_between_activities = 0
+    with blocks_column:
+        toggle_block_colours = st.toggle('Blocks colours', value=True)
+    with begin_column:
+        if selected_view["has_time_blocks"]:
+            toggle_begin_end_colours = st.toggle('Begin-End colours')
+            if toggle_begin_end_colours:
+                max_time_between_activities = st.slider("Maximum time between activities (minutes)", min_value=0, max_value=30, value=5)
+        else:
+            toggle_begin_end_colours = False
+
+    return {
+        'toggle_block_colours': toggle_block_colours,
+        'toggle_begin_end_colours': toggle_begin_end_colours,
+        'max_time_between_activities': max_time_between_activities
+    }
+
+
+
 st.set_page_config(layout="wide")
 
 dicc_core, dicc_subact, dicc_map_subact, dicc_core_color = load_activities()
@@ -619,48 +721,9 @@ if "df_original" in st.session_state:
 
     selected_df = selected_view['options_func'](st.session_state.df_original)
 
-    blocks_column, begin_column = st.columns(2)
-    with blocks_column:
-        toggle_block_colours = st.toggle('Blocks colours', value=True)
-    with begin_column:
-        if selected_view["has_time_blocks"]:
-            toggle_begin_end_colours = st.toggle('Begin-End colours')
-            if toggle_begin_end_colours:
-                max_time_between_activities = st.slider("Maximum time between activities (minutes)", min_value=0, max_value=30, value=5)
-        else:
-            toggle_begin_end_colours = False
+    format_table = display_table_formatter(selected_view)
 
-    
-    if len(selected_df) == 0:
-        st.error("There is no data for the selected date 😞. Why don't you try with another one? 😉")
-    else:
-        try:
-            
-            button_column = st.columns(3)
-            with button_column[0]:
-                display_undo_button()
-            with button_column[1]:
-                select_all = display_select_all_button()
-            with button_column[2]:
-                download_csv(st.session_state.df_original)
+    display_view(selected_view, selected_df, format_table)
 
-            page, batch_size, total_pages = paginate_df(selected_df)
-            if select_all:
-                page["Change"] = True
-
-            column_config, column_order = selected_view['config_func'](max_dur=selected_df["Duration"].max())
-
-            styled_page = apply_styles(page, toggle_block_colours, toggle_begin_end_colours)
-            selected_rows = display_events_table(styled_page, batch_size, column_config, column_order)
-            display_pagination_bottom(total_pages)
-
-            with st.sidebar:
-                st.title("Label cases")
-                cases_classification()
-                st.title("Label activities")
-                automated_classification()
-                manual_classification_sidebar()
-
-        except Exception as e: 
-            print(f"There was an error: {e}")
-            st.error("There was an error processing the request. Try again")
+    with st.sidebar:
+        display_label_palette(selected_df)
