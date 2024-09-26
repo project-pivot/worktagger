@@ -23,6 +23,16 @@ When the AWT log is loaded in the application, Work Tagger displays the AWT even
 
 Concerning the labeling of cases, only manual labeling is possible. Moreover, unlike activities, the set of cases are open and users can pick from case labels already used in the dataset or can enter new case labels. The reason for following a different approach for cases is because, unlike activities, they are very specific to a particular person and a particular moment in time. 
 
+## Running Work Tagger Locally
+
+To run Work Tagger locally, follow these steps:
+
+1. Clone the repository to your local machine.
+2. Open a terminal and navigate to the root directory of the repository.
+3. Run the following command to launch the application:
+   ```bash
+   python -m streamlit run app_core_act.py
+
 ## References
 
 Beerepoot, Iris, Barenholz, Daniël, Beekhuis, Stijn, Gulden, Jens, Lee, Suhwan, Lu, Xixi, Overbeek, Sietse, Van De Weerd, Inge, Van Der Werf, Jan Martijn, and Reijers, Hajo A. "A Window of Opportunity: Active Window Tracking for Mining Work Practices." In *2023 5th International Conference on Process Mining (ICPM)*, pp. 57-64. IEEE, 2023.
