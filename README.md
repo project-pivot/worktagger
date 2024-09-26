@@ -33,6 +33,11 @@ To run Work Tagger locally, follow these steps:
    ```bash
    python -m streamlit run app_core_act.py
 
+## Demo Video
+
+For a detailed demonstration, you can watch the [Work Tagger demo on YouTube](https://www.youtube.com/watch?v=ulVh63TyR6k).
+
+
 ## References
 
 Beerepoot, Iris, Barenholz, Daniël, Beekhuis, Stijn, Gulden, Jens, Lee, Suhwan, Lu, Xixi, Overbeek, Sietse, Van De Weerd, Inge, Van Der Werf, Jan Martijn, and Reijers, Hajo A. "A Window of Opportunity: Active Window Tracking for Mining Work Practices." In *2023 5th International Conference on Process Mining (ICPM)*, pp. 57-64. IEEE, 2023.
