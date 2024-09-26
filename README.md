@@ -33,6 +33,32 @@ To run Work Tagger locally, follow these steps:
    ```bash
    python -m streamlit run app_core_act.py
 
+## Adding Core Activities as a Developer
+
+To add new core activities and their respective subactivities to Work Tagger, follow these steps:
+
+1. Open the `core_act.py`file located in the repository.
+2. Inside this file, locate the `load_activities`function, which contains a dictionary called `dicc_core`.
+3. This dictionary stores the predefined core activities. It has sseveral keys such as `"General"`, `"General (extended)"`, `"Education"`, and `"Research"`, with each key mapping to a list of dictionaries. Each dictionary represents a core activity with the following structure:
+   - `core_activity`: The name of the core activity.
+   - `color`: The color associated with this activity (used for UI representation).
+   - `activities`: A list of subactivities related to this core activity.
+  
+To add a new core activity, follow these steps:
+
+1. Choose the appropriate key (e.g., `"General"`.`"Education"`, etc.) based on the category of your new core activity.
+2. Add a new dictionary to the corresponding list. This dictionary should follow the structure of existing entries, as shown below:
+   ```python
+   {
+      "core_activity": "Your new core activity name",
+      "color": "#YourColorCode",  # Specify a color for UI representation
+      "activities": [
+         "First subactivity description",
+         "Second subactivity description",
+         "Third subactivity description"
+      ]
+   }
+
 ## Demo Video
 
 For a detailed demonstration, you can watch the [Work Tagger demo on YouTube](https://www.youtube.com/watch?v=ulVh63TyR6k).
