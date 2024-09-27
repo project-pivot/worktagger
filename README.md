@@ -29,9 +29,14 @@ To run Work Tagger locally, follow these steps:
 
 1. Clone the repository to your local machine.
 2. Open a terminal and navigate to the root directory of the repository.
-3. Run the following command to launch the application:
+3. Install the dependencies:
+   ```bash
+   pip3 install -r requirements.txt
+   ```
+4. Run the following command to launch the application:
    ```bash
    python -m streamlit run app_core_act.py
+   ```
 
 ## Adding Core Activities as a Developer
 
@@ -58,6 +63,7 @@ To add a new core activity, follow these steps:
          "Third subactivity description"
       ]
    }
+   ```
 
 ## Demo Video
 
