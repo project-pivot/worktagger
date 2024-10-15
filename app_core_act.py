@@ -142,7 +142,7 @@ def apply_label_to_selection(**kwargs):
 
 def to_csv(df):
     output = io.BytesIO()
-    df.to_csv(output, sep = ";",  index=False, date_format= '%d/%m/%Y %H:%M')
+    df.to_csv(output, sep = ";",  index=False, date_format= '%d/%m/%Y %H:%M:%S')
     return output.getvalue().decode('utf-8')
 
 def download_csv(df):
