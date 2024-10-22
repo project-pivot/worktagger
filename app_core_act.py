@@ -10,6 +10,8 @@ import streamlit.components.v1 as components
 import clasificacion_core_act
 import core_act as activities_loader
 
+SAMPLE_DATA_URL = "https://raw.githubusercontent.com/project-pivot/labelled-awt-data/main/data/awt_data_1_pseudonymized.csv"
+
 # Configure logging
 logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -472,7 +474,7 @@ def load_time_view():
     
     return {
         "label": "📅 Time view",
-        "options_func": time_view_options,
+        "filter_func": time_view_options,
         "config_func": time_view_config,
         "save_func": time_view_save,
         "has_time_blocks": True
@@ -536,7 +538,7 @@ def load_active_window_view():
     
     return {
         "label": "🖥️ Active window view",
-        "options_func": active_window_view_options,
+        "filter_func": active_window_view_options,
         "config_func": active_window_view_config,
         "save_func": active_window_view_save,
         "has_time_blocks": False
@@ -606,7 +608,7 @@ def load_activity_view():
     
     return {
         "label": "👩‍💻 Activity view",
-        "options_func": activity_view_options,
+        "filter_func": activity_view_options,
         "config_func": activity_view_config,
         "save_func": activity_view_save,
         "has_time_blocks": False
@@ -681,7 +683,7 @@ all_sub = [f"{s} - {c}" for c in dicc_subact for s in dicc_subact[c]]
 # Upload file
 with st.expander("Upload your data"):
     archivo_cargado = st.file_uploader("Upload your Tockler data here. You can export your data by going to Tockler > Search > Set a time period > Export to CSV.", type=["csv"], key="source_file", on_change=changed_file)
-    st.write("Alternatively, you can load sample data from https://github.com/project-pivot/labelled-awt-data/")
+    st.write("Alternatively, you can load sample data from https://github.com/project-pivot/labelled-awt-data/ just by clicking the following button:")
     load_sample_data = st.button("Load sample data", type="primary", on_click=changed_file)
 
 mensaje_container = st.empty()
@@ -697,7 +699,7 @@ if "df_original" not in st.session_state:
     if archivo_cargado is not None or load_sample_data:
         mensaje_container.write("Loading...")
         if load_sample_data:
-            data_expanded = clasificacion_core_act.simple_load_file(url_link="https://raw.githubusercontent.com/project-pivot/labelled-awt-data/main/data/awt_data_1_pseudonymized.csv", dayfirst=True)
+            data_expanded = clasificacion_core_act.simple_load_file(url_link=SAMPLE_DATA_URL, dayfirst=True)
         elif archivo_cargado is not None:
             data_expanded = clasificacion_core_act.simple_load_file(loaded_file=archivo_cargado)
         mensaje_container.write("File loaded")
@@ -719,7 +721,7 @@ if "df_original" in st.session_state:
     view_type = st.radio(label="Select view", options=view_options.keys(), format_func=lambda x: view_options[x]['label'], key='view_type', horizontal=True, on_change=reset_current_page)
     selected_view = view_options[view_type]
 
-    selected_df = selected_view['options_func'](st.session_state.df_original)
+    selected_df = selected_view['filter_func'](st.session_state.df_original)
 
     format_table = display_table_formatter(selected_view)
 
