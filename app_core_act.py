@@ -9,6 +9,7 @@ import streamlit.components.v1 as components
 
 import clasificacion_core_act
 import core_act as activities_loader
+import analysis as wt
 
 SAMPLE_DATA_URL = "https://raw.githubusercontent.com/project-pivot/labelled-awt-data/main/data/awt_data_1_pseudonymized.csv"
 
@@ -399,7 +400,23 @@ def automated_classification():
 
             st.selectbox("Choose what data you want to classify", options, index=index, key='auto_type')
         
-            st.form_submit_button("Click to start classification", on_click=run_auto_classify) 
+            st.form_submit_button("Start classification", on_click=run_auto_classify) 
+
+def heuristic_classification():
+    def run_expand_labels():    
+        interval = st.session_state.heuristic_interval
+        all = st.session_state.df_original 
+        st.session_state.undo_df = all.copy()
+
+        temporal_slots = wt.find_temporal_slots(all, inactivity_threshold=pd.Timedelta(f'{interval}s'))
+        case_expand = wt.expand_slots(all, temporal_slots, column='Case')
+
+        all['Case'] = case_expand
+      
+    with st.expander("Heuristic labeling"):
+        with st.form(key='heuristic_labeling'):
+            st.slider("Interval size (in seconds)", min_value=0, max_value=300, key='heuristic_interval')
+            st.form_submit_button("Expand case labels", on_click=run_expand_labels) 
 
 
 def load_time_view():
@@ -649,6 +666,7 @@ def display_label_palette(selected_df):
             cases_classification()
             st.title("Label activities")
             automated_classification()
+            heuristic_classification()
             manual_classification_sidebar()
         except Exception as e: 
             logging.exception(f"There was an error while displaying the sidebar", exc_info=e)
