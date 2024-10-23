@@ -493,6 +493,7 @@ all_sub = [f"{s} - {c}" for c in dicc_subact for s in dicc_subact[c]]
 # Upload file
 with st.expander("Upload your data"):
     archivo_cargado = st.file_uploader("Upload your Tockler data here. You can export your data by going to Tockler > Search > Set a time period > Export to CSV.", type=["csv"], key="source_file", on_change=changed_file)
+    filter_by_time = st.slider("Remove active windows with a duration less than (in seconds). Note that the data saved will not contain those windows anymore:", min_value=0, max_value=300, on_change=changed_file)
     st.write("Alternatively, you can load sample data from https://github.com/project-pivot/labelled-awt-data/ just by clicking the following button:")
     load_sample_data = st.button("Load sample data", type="primary", on_click=changed_file)
 
@@ -512,6 +513,9 @@ if "df_original" not in st.session_state:
             data_expanded = clasificacion_core_act.simple_load_file(url_link=SAMPLE_DATA_URL, dayfirst=True)
         elif archivo_cargado is not None:
             data_expanded = clasificacion_core_act.simple_load_file(loaded_file=archivo_cargado)
+        if filter_by_time > 0:
+            data_expanded = data_expanded[data_expanded['Duration'] >= filter_by_time]
+
         mensaje_container.write("File loaded")
 
         data_expanded['ID'] = range(1,len(data_expanded)+1)
